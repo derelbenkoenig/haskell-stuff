@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia #-}
+{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia, RankNTypes #-}
 
 module Wc where
 
@@ -14,9 +14,8 @@ import System.IO
 import GHC.Generics
 import Data.Monoid
 import Data.Semigroup
-
-countFileBy :: CountMode -> Handle -> IO Int64
-countFileBy f = fmap (countFunc f) . TextIO.hGetContents
+import Data.Proxy
+import Data.Char
 
 data CountMode = Lines | Words | Chars | Bytes | MaxLineLength
     deriving (Eq, Ord, Enum, Show, Generic)
@@ -26,6 +25,8 @@ data family CountBy :: CountMode -> *
 newtype instance CountBy Lines = CountLines Int64
     deriving (Show, Generic)
     deriving (Semigroup, Monoid) via (Sum Int64)
+
+countLinesFromChar c = if c == '\n' then 1 else 0
 
 data instance CountBy Words = CountWords
     { whitespaceLeft :: {-# UNPACK #-} !Bool,
@@ -43,13 +44,24 @@ instance Semigroup (CountBy Words) where
 instance Monoid (CountBy Words) where
     mempty = CountWordsEmpty
 
+countWordsFromChar c = if isSpace c
+                           then CountWords True 0 True
+                           else CountWords False 1 False
+
 newtype instance CountBy Chars = CountChars Int64
     deriving (Show, Generic)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
+-- TODO figure out how to do chars and bytes differently
+-- _probably_ do it on ByteStrings, which means we have the bytes directly
+-- and have to get chars from that. 
+countCharsFromChar _ = 1
+
 newtype instance CountBy Bytes = CountBytes Int64
     deriving (Show, Generic)
     deriving (Semigroup, Monoid) via (Sum Int64)
+
+countBytesFromChar _ = 1
 
 data instance CountBy MaxLineLength =
     CountLineLengthUnbroken 
@@ -82,18 +94,7 @@ instance Semigroup (CountBy MaxLineLength) where
 instance Monoid (CountBy MaxLineLength) where
     mempty = CountLineLengthUnbroken 0
 
--- TODO remove
-countFunc :: CountMode -> Text.Text -> Int64
-countFunc mode = case mode of
-        Lines -> genericLength . Text.lines
-        Words -> genericLength . Text.words
-        Chars -> Text.length
-        Bytes -> BS.length . encode
-        MaxLineLength -> maximum . (map Text.length) . Text.lines
-
--- TODO remove
-getCounts :: Set.Set CountMode -> Handle -> IO [Int64]
-getCounts modes h = (\t -> map (($ t) . countFunc) (Set.toAscList modes)) <$> TextIO.hGetContents h
+testStr = "abcde\nab\nabcd\n"
 
 totals :: [[Int64]] -> [Int64]
 totals = foldl' (zipWith (+)) (repeat 0)
