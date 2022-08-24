@@ -1,3 +1,5 @@
+import Data.Foldable (foldl')
+
 fizzBuzz = let
     makeCycle word num = cycle([word] ++ (take (num - 1) (repeat "")))
     fizzes = makeCycle "Fizz" 3
@@ -5,4 +7,4 @@ fizzBuzz = let
     strings = zipWith (++) fizzes buzzes
     in zipWith (\ str num -> if (null str) then show num else str) strings [0..]
 
-main = foldr (*>) (return ()) (map putStrLn (drop 1 $ take 101 fizzBuzz))
+main = foldl' (*>) (pure ()) (map putStrLn (drop 1 $ take 1000001 fizzBuzz))
