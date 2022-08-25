@@ -16,9 +16,20 @@ import Data.Monoid
 import Data.Semigroup
 import Data.Proxy
 import Data.Char
+import Data.Coerce
 
 data CountMode = Lines | Words | Chars | Bytes | MaxLineLength
     deriving (Eq, Ord, Enum, Show, Generic)
+
+class Monoid m => CountModeC m where
+    type Result m :: *
+    fromChar :: Char -> m
+    getResult :: m -> (Result m)
+
+instance (CountModeC m1, CountModeC m2) => CountModeC (m1, m2) where
+    type Result (m1, m2) = (Result m1, Result m2)
+    fromChar !c = (fromChar c, fromChar c)
+    getResult (!x,!y) = (getResult x, getResult y)
 
 data family CountBy :: CountMode -> *
 
@@ -26,7 +37,10 @@ newtype instance CountBy Lines = CountLines Int64
     deriving (Show, Generic)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
-countLinesFromChar c = if c == '\n' then 1 else 0
+instance CountModeC (CountBy Lines) where
+    type Result (CountBy Lines) = Int64
+    fromChar c = CountLines $ if c == '\n' then 1 else 0
+    getResult = coerce
 
 data instance CountBy Words = CountWords
     { whitespaceLeft :: {-# UNPACK #-} !Bool,
@@ -44,24 +58,37 @@ instance Semigroup (CountBy Words) where
 instance Monoid (CountBy Words) where
     mempty = CountWordsEmpty
 
-countWordsFromChar c = if isSpace c
-                           then CountWords True 0 True
-                           else CountWords False 1 False
+instance CountModeC (CountBy Words) where
+    type Result (CountBy Words) = Int64
+    fromChar c = if isSpace c
+                               then CountWords True 0 True
+                               else CountWords False 1 False
+    getResult CountWordsEmpty = 0
+    getResult (CountWords _ n _) = n
 
 newtype instance CountBy Chars = CountChars Int64
     deriving (Show, Generic)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
--- TODO figure out how to do chars and bytes differently
--- _probably_ do it on ByteStrings, which means we have the bytes directly
--- and have to get chars from that. 
-countCharsFromChar _ = 1
+instance CountModeC (CountBy Chars) where
+    type Result (CountBy Chars) = Int64
+    -- TODO figure out how to do chars and bytes differently
+    -- _probably_ do it on ByteStrings, which means we have the bytes directly
+    -- and have to get chars from that. 
+    fromChar _ = CountChars 1
+    getResult = coerce
 
 newtype instance CountBy Bytes = CountBytes Int64
     deriving (Show, Generic)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
-countBytesFromChar _ = 1
+instance CountModeC (CountBy Bytes) where
+    type Result (CountBy Bytes) = Int64
+    -- TODO figure out how to do chars and bytes differently
+    -- _probably_ do it on ByteStrings, which means we have the bytes directly
+    -- and have to get chars from that. 
+    fromChar _ = CountBytes 1
+    getResult = coerce
 
 data instance CountBy MaxLineLength =
     CountLineLengthUnbroken 
@@ -73,10 +100,6 @@ data instance CountBy MaxLineLength =
           lengthRight :: {-# UNPACK #-} !Int64
         }
     deriving (Show, Generic)
-
-maxLineLengthFromChar c = if c == '\n'
-                              then CountMaxLineLength 0 0 0
-                              else CountLineLengthUnbroken 1
 
 instance Semigroup (CountBy MaxLineLength) where
     CountLineLengthUnbroken x <> CountLineLengthUnbroken x' =
@@ -94,6 +117,14 @@ instance Semigroup (CountBy MaxLineLength) where
 instance Monoid (CountBy MaxLineLength) where
     mempty = CountLineLengthUnbroken 0
 
+instance CountModeC (CountBy MaxLineLength) where
+    type Result (CountBy MaxLineLength) = Int64
+    fromChar c = if c == '\n'
+                     then CountMaxLineLength 0 0 0
+                     else CountLineLengthUnbroken 1
+    getResult (CountLineLengthUnbroken n) = n
+    getResult (CountMaxLineLength _ n _) = n
+
 testStr = "abcde\nab\nabcd\n"
 
 totals :: [[Int64]] -> [Int64]
@@ -106,3 +137,7 @@ isLengthAtLeast n xs = if n <= 0 then True else go xs where
 fold' :: (Foldable t, Monoid a) => t a -> a
 fold' = foldl' (<>) mempty
 
+doCount :: CountModeC m => Proxy m -> Text.Text -> (Result m)
+doCount (Proxy :: Proxy m) = 
+    (getResult :: m -> Result m)
+    . Text.foldl' (\a c -> a <> (fromChar :: Char -> m) c) mempty
