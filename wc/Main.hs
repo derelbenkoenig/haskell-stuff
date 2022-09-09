@@ -1,6 +1,7 @@
 module Main where
 
 import Wc
+import TryingSingletons
 import Options.Applicative
 import qualified Data.Set as Set
 import Data.Maybe

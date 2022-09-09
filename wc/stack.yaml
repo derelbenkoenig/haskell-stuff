@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: nightly-2022-07-06
+resolver: ghc-9.4
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -38,7 +38,34 @@ packages: [.]
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
-# extra-deps: []
+
+# added all these since stack told me to, because I guess stack doesn't have them
+# in the resolver which is based on a ghc version. Because "ghc" snapshots are "compiler-only"
+# snapshots, and I needed to use a compiler-only snapshot to use a ghc past 9.2; and I need
+# to use the newest ghc to work with singletons-th
+extra-deps:
+  - optparse-applicative-0.17.0.0
+  - ansi-wl-pprint-0.6.9
+  - singletons-3.0.2
+  - singletons-base-3.1.1
+  - singletons-th-3.1.1
+  - transformers-compat-0.7.2
+  - ansi-terminal-0.11.3
+  - syb-0.7.2.1
+  - th-desugar-1.14
+  - th-orphans-0.13.14
+  - colour-2.3.6
+  - ordered-containers-0.2.2
+  - th-abstraction-0.4.4.0
+  - th-compat-0.1.4
+  - th-lift-0.8.2
+  - th-reify-many-0.1.10
+  - safe-0.3.19
+  - th-expand-syns-0.4.10.0
+
+
+
+
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

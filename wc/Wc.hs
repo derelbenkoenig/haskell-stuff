@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia, RankNTypes #-}
+{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia, RankNTypes
+    , BangPatterns, TypeApplications, ScopedTypeVariables, FlexibleInstances #-}
 
 module Wc where
 
@@ -11,7 +12,6 @@ import Data.List
 import Data.Int
 import qualified Data.Set as Set
 import System.IO
-import GHC.Generics
 import Data.Monoid
 import Data.Semigroup
 import Data.Proxy
@@ -19,12 +19,17 @@ import Data.Char
 import Data.Coerce
 
 data CountMode = Lines | Words | Chars | Bytes | MaxLineLength
-    deriving (Eq, Ord, Enum, Show, Generic)
+    deriving (Eq, Ord, Enum, Show)
 
 class Monoid m => CountModeC m where
     type Result m :: *
     fromChar :: Char -> m
     getResult :: m -> (Result m)
+
+instance CountModeC () where
+    type Result () = ()
+    fromChar _ = ()
+    getResult _ = ()
 
 instance (CountModeC m1, CountModeC m2) => CountModeC (m1, m2) where
     type Result (m1, m2) = (Result m1, Result m2)
@@ -34,7 +39,7 @@ instance (CountModeC m1, CountModeC m2) => CountModeC (m1, m2) where
 data family CountBy :: CountMode -> *
 
 newtype instance CountBy Lines = CountLines Int64
-    deriving (Show, Generic)
+    deriving (Show)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
 instance CountModeC (CountBy Lines) where
@@ -47,7 +52,7 @@ data instance CountBy Words = CountWords
       currentCount :: {-# UNPACK #-} !Int64,
       whitespaceRight :: {-# UNPACK #-} !Bool
     } | CountWordsEmpty
-    deriving (Show, Generic)
+    deriving (Show)
 
 instance Semigroup (CountBy Words) where
     CountWordsEmpty <> x = x
@@ -67,7 +72,7 @@ instance CountModeC (CountBy Words) where
     getResult (CountWords _ n _) = n
 
 newtype instance CountBy Chars = CountChars Int64
-    deriving (Show, Generic)
+    deriving (Show)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
 instance CountModeC (CountBy Chars) where
@@ -79,7 +84,7 @@ instance CountModeC (CountBy Chars) where
     getResult = coerce
 
 newtype instance CountBy Bytes = CountBytes Int64
-    deriving (Show, Generic)
+    deriving (Show)
     deriving (Semigroup, Monoid) via (Sum Int64)
 
 instance CountModeC (CountBy Bytes) where
@@ -99,7 +104,7 @@ data instance CountBy MaxLineLength =
           knownMax :: {-# UNPACK #-} !Int64,
           lengthRight :: {-# UNPACK #-} !Int64
         }
-    deriving (Show, Generic)
+    deriving (Show)
 
 instance Semigroup (CountBy MaxLineLength) where
     CountLineLengthUnbroken x <> CountLineLengthUnbroken x' =
@@ -125,7 +130,7 @@ instance CountModeC (CountBy MaxLineLength) where
     getResult (CountLineLengthUnbroken n) = n
     getResult (CountMaxLineLength _ n _) = n
 
-testStr = "abcde\nab\nabcd\n"
+testStr = "abcdef\nab\nab cd\n"
 
 totals :: [[Int64]] -> [Int64]
 totals = foldl' (zipWith (+)) (repeat 0)
@@ -137,7 +142,15 @@ isLengthAtLeast n xs = if n <= 0 then True else go xs where
 fold' :: (Foldable t, Monoid a) => t a -> a
 fold' = foldl' (<>) mempty
 
-doCount :: CountModeC m => Proxy m -> Text.Text -> (Result m)
-doCount (Proxy :: Proxy m) = 
+doCountText :: CountModeC m => Proxy m -> Text.Text -> (Result m)
+doCountText (Proxy :: Proxy m) = 
     (getResult :: m -> Result m)
     . Text.foldl' (\a c -> a <> (fromChar :: Char -> m) c) mempty
+
+countBy :: CountMode -> Text.Text -> Int64
+countBy mode = case mode of
+    Lines -> doCountText (Proxy @(CountBy Lines))
+    Words -> doCountText (Proxy @(CountBy Words))
+    Chars -> doCountText (Proxy @(CountBy Chars))
+    Bytes -> doCountText (Proxy @(CountBy Bytes))
+    MaxLineLength -> doCountText (Proxy @(CountBy MaxLineLength))
