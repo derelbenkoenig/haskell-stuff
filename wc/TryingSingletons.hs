@@ -41,7 +41,7 @@ foo' modes = case toSing modes of
     SomeSing sms -> undefined
 
 type CountByModes :: [CountMode] -> *
-type family CountByModes (m :: [CountMode]) where
+type family CountByModes (ms :: [CountMode]) where
     CountByModes ms = ListToPairs (Map (TyCon1 CountBy) ms)
 
 type ListToPairs :: [*] -> *
