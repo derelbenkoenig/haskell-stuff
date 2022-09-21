@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia, RankNTypes
-    , BangPatterns, TypeApplications, ScopedTypeVariables, FlexibleInstances #-}
+{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia, RankNTypes,
+    BangPatterns, TypeApplications, ScopedTypeVariables, FlexibleInstances,
+    GADTs#-}
 
 module Wc where
 
