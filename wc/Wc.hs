@@ -1,22 +1,19 @@
-{-# LANGUAGE DataKinds, TypeFamilies, DerivingVia, RankNTypes,
-    BangPatterns, TypeApplications, ScopedTypeVariables, FlexibleInstances,
-    GADTs#-}
+{-# LANGUAGE
+   BangPatterns,
+   DataKinds,
+   FlexibleInstances,
+   GADTs,
+   RankNTypes,
+   ScopedTypeVariables,
+   TypeApplications,
+   TypeFamilies
+   #-}
 
 module Wc where
 
-import Control.Monad ( (>=>) )
-import qualified Data.ByteString.Lazy as BS
-import Data.Binary (encode)
-import qualified Data.Text.Lazy as Text
-import qualified Data.Text.Lazy.IO as TextIO
 import Data.List
 import Data.Int
-import qualified Data.Set as Set
-import System.IO
-import Data.Monoid
-import Data.Semigroup
 import Data.Char
-import Data.Function
 
 --
 -- the CountModeC class

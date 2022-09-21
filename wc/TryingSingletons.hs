@@ -1,17 +1,19 @@
-{-# LANGUAGE DataKinds,
-   TypeFamilies,
-   DerivingVia,
-   RankNTypes,
-   BangPatterns,
-   TypeApplications,
-   StandaloneKindSignatures,
+{-# LANGUAGE
+   DataKinds,
+   FlexibleContexts,
+   FlexibleInstances,
    GADTs,
-   UndecidableInstances,
+   MultiParamTypeClasses,
+   PartialTypeSignatures,
+   RankNTypes,
    ScopedTypeVariables,
+   StandaloneDeriving,
+   StandaloneKindSignatures,
+   TemplateHaskell,
+   TypeApplications,
+   TypeFamilies,
    TypeOperators,
-   FlexibleContexts #-}
-
-{-# LANGUAGE TemplateHaskell #-}
+   UndecidableInstances #-}
 
 module TryingSingletons where
 
@@ -20,6 +22,8 @@ import Data.Singletons.TH
 import Data.List.Singletons
 import Text.Show.Singletons
 import Data.List (foldl')
+import Data.Int
+
 import Wc
 
 $(genSingletons [''CountMode])
@@ -27,9 +31,14 @@ $(showSingInstances [''CountMode])
 
 $(genDefunSymbols [''CountBy])
 
-foo :: forall ms. (CountModeC (CountByModes ms)) => Sing ms -> String -> (Result (CountByModes ms))
-foo modes = getResult @(CountByModes ms) .
+foo :: forall ms r. (CountModeC (CountByModes ms), PairList (Result (CountByModes ms)) Int64) =>
+    Sing ms -> String -> [Int64]
+foo modes = toList . getResult @(CountByModes ms) .
     foldl' (\count char -> count <> fromChar @(CountByModes ms) char) mempty
+
+foo' :: [CountMode] -> String -> [Int64]
+foo' modes = case toSing modes of
+    SomeSing sms -> undefined
 
 type CountByModes :: [CountMode] -> *
 type family CountByModes (m :: [CountMode]) where
@@ -39,3 +48,12 @@ type ListToPairs :: [*] -> *
 type family ListToPairs as where
     ListToPairs '[] = ()
     ListToPairs (t ': ts) = (t, ListToPairs ts)
+
+class PairList p e where
+    toList :: p -> [e]
+
+instance PairList () e where
+    toList () = []
+
+instance PairList es e => PairList (e, es) e where
+    toList (x, xs) = x : toList xs
