@@ -18,7 +18,9 @@ extra-source-files:  CHANGELOG.md
 
 executable wc
   main-is:             Main.hs
-  -- other-modules:
+  other-modules:
+    Wc,
+    TryingSingletons
   -- other-extensions:
   build-depends:       base >= 4.17 
                         , optparse-applicative

@@ -14,12 +14,12 @@ import qualified Data.Set as Set
 import System.IO
 import Data.Monoid
 import Data.Semigroup
-import Data.Proxy
 import Data.Char
-import Data.Coerce
+import Data.Function
 
-data CountMode = Lines | Words | Chars | Bytes | MaxLineLength
-    deriving (Eq, Ord, Enum, Show)
+--
+-- the CountModeC class
+--
 
 class Monoid m => CountModeC m where
     type Result m :: *
@@ -36,24 +36,44 @@ instance (CountModeC m1, CountModeC m2) => CountModeC (m1, m2) where
     fromChar !c = (fromChar c, fromChar c)
     getResult (!x,!y) = (getResult x, getResult y)
 
-data family CountBy :: CountMode -> *
+--
+-- The CountMode enum
+--
 
-newtype instance CountBy Lines = CountLines Int64
-    deriving (Show)
-    deriving (Semigroup, Monoid) via (Sum Int64)
+data CountMode = Lines | Words | Chars | Bytes | MaxLineLength
+    deriving (Eq, Ord, Enum, Show)
+
+--
+-- The CountBy data family
+--
+
+data CountBy (m :: CountMode) where
+    CountLines :: !Int64 -> CountBy Lines
+    CountWords :: { whitespaceLeft :: !Bool,
+                    currentCount :: !Int64,
+                    whitespaceRight :: !Bool } -> CountBy Words
+    CountWordsEmpty :: CountBy Words
+    CountChars :: !Int64 -> CountBy Chars
+    CountBytes :: !Int64 -> CountBy Bytes
+    CountLineLengthUnbroken :: { lineLength :: !Int64 } -> CountBy MaxLineLength
+    CountMaxLineLength :: { lengthLeft :: !Int64,
+                            knownMax :: !Int64,
+                            lengthRight :: !Int64 } -> CountBy MaxLineLength
+
+-- instances for lines
+--
+instance Semigroup (CountBy Lines) where
+    CountLines x <> CountLines y = CountLines (x + y)
+instance Monoid (CountBy Lines) where
+    mempty = CountLines 0
 
 instance CountModeC (CountBy Lines) where
     type Result (CountBy Lines) = Int64
     fromChar c = CountLines $ if c == '\n' then 1 else 0
-    getResult = coerce
+    getResult (CountLines x) = x
 
-data instance CountBy Words = CountWords
-    { whitespaceLeft :: {-# UNPACK #-} !Bool,
-      currentCount :: {-# UNPACK #-} !Int64,
-      whitespaceRight :: {-# UNPACK #-} !Bool
-    } | CountWordsEmpty
-    deriving (Show)
-
+-- instances for words
+--
 instance Semigroup (CountBy Words) where
     CountWordsEmpty <> x = x
     x <> CountWordsEmpty = x
@@ -71,9 +91,12 @@ instance CountModeC (CountBy Words) where
     getResult CountWordsEmpty = 0
     getResult (CountWords _ n _) = n
 
-newtype instance CountBy Chars = CountChars Int64
-    deriving (Show)
-    deriving (Semigroup, Monoid) via (Sum Int64)
+-- instances for chars
+--
+instance Semigroup (CountBy Chars) where
+    CountChars x <> CountChars y = CountChars (x + y)
+instance Monoid (CountBy Chars) where
+    mempty = CountChars 0
 
 instance CountModeC (CountBy Chars) where
     type Result (CountBy Chars) = Int64
@@ -81,11 +104,14 @@ instance CountModeC (CountBy Chars) where
     -- _probably_ do it on ByteStrings, which means we have the bytes directly
     -- and have to get chars from that. 
     fromChar _ = CountChars 1
-    getResult = coerce
+    getResult (CountChars x) = x
 
-newtype instance CountBy Bytes = CountBytes Int64
-    deriving (Show)
-    deriving (Semigroup, Monoid) via (Sum Int64)
+-- instances for bytes
+--
+instance Semigroup (CountBy Bytes) where
+    CountBytes x <> CountBytes y = CountBytes (x + y)
+instance Monoid (CountBy Bytes) where
+    mempty = CountBytes 0
 
 instance CountModeC (CountBy Bytes) where
     type Result (CountBy Bytes) = Int64
@@ -93,19 +119,10 @@ instance CountModeC (CountBy Bytes) where
     -- _probably_ do it on ByteStrings, which means we have the bytes directly
     -- and have to get chars from that. 
     fromChar _ = CountBytes 1
-    getResult = coerce
+    getResult (CountBytes x) = x
 
-data instance CountBy MaxLineLength =
-    CountLineLengthUnbroken 
-        { lineLength :: {-# UNPACK #-} !Int64 
-        } |
-    CountMaxLineLength
-        { lengthLeft :: {-# UNPACK #-} !Int64,
-          knownMax :: {-# UNPACK #-} !Int64,
-          lengthRight :: {-# UNPACK #-} !Int64
-        }
-    deriving (Show)
-
+-- instances for maxLineLength
+--
 instance Semigroup (CountBy MaxLineLength) where
     CountLineLengthUnbroken x <> CountLineLengthUnbroken x' =
         CountLineLengthUnbroken (x + x')
@@ -138,19 +155,3 @@ totals = foldl' (zipWith (+)) (repeat 0)
 isLengthAtLeast n xs = if n <= 0 then True else go xs where
     go [] = False
     go (_:xs') = isLengthAtLeast (n - 1) xs'
-
-fold' :: (Foldable t, Monoid a) => t a -> a
-fold' = foldl' (<>) mempty
-
-doCountText :: CountModeC m => Proxy m -> Text.Text -> (Result m)
-doCountText (Proxy :: Proxy m) = 
-    (getResult :: m -> Result m)
-    . Text.foldl' (\a c -> a <> (fromChar :: Char -> m) c) mempty
-
-countBy :: CountMode -> Text.Text -> Int64
-countBy mode = case mode of
-    Lines -> doCountText (Proxy @(CountBy Lines))
-    Words -> doCountText (Proxy @(CountBy Words))
-    Chars -> doCountText (Proxy @(CountBy Chars))
-    Bytes -> doCountText (Proxy @(CountBy Bytes))
-    MaxLineLength -> doCountText (Proxy @(CountBy MaxLineLength))

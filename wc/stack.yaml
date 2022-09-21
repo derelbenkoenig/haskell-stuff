@@ -63,10 +63,6 @@ extra-deps:
   - safe-0.3.19
   - th-expand-syns-0.4.10.0
 
-
-
-
-
 # Override default flag values for local packages and extra-deps
 # flags: {}
 
