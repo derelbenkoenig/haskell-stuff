@@ -13,7 +13,8 @@
    TypeApplications,
    TypeFamilies,
    TypeOperators,
-   UndecidableInstances #-}
+   UndecidableInstances
+   #-}
 
 module TryingSingletons where
 
@@ -29,10 +30,9 @@ import Wc
 $(genSingletons [''CountMode])
 $(showSingInstances [''CountMode])
 
-$(genDefunSymbols [''CountBy])
-
-foo :: forall ms r. (CountModeC (CountByModes ms), PairList (Result (CountByModes ms)) Int64) =>
-    Sing ms -> String -> [Int64]
+-- I'll change this to operate on ByteString or something later...
+foo :: forall ms r. (CountModeC (CountByModes ms), PairList (Result (CountByModes ms)) r) =>
+    Sing ms -> String -> [r]
 foo modes = toList . getResult @(CountByModes ms) .
     foldl' (\count char -> count <> fromChar @(CountByModes ms) char) mempty
 
