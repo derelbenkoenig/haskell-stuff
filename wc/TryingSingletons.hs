@@ -31,7 +31,9 @@ $(genSingletons [''CountMode])
 $(showSingInstances [''CountMode])
 
 -- I'll change this to operate on ByteString or something later...
-foo :: forall ms r. (CountModeC (CountByModes ms), PairList (Result (CountByModes ms)) r) =>
+foo :: forall (ms :: [CountMode]) r.
+    (CountModeC (CountByModes ms),
+    PairList (Result (CountByModes ms)) r) =>
     Sing ms -> String -> [r]
 foo modes = toList . getResult @(CountByModes ms) .
     foldl' (\count char -> count <> fromChar @(CountByModes ms) char) mempty
@@ -40,9 +42,16 @@ foo' :: [CountMode] -> String -> [Int64]
 foo' modes = case toSing modes of
     SomeSing sms -> undefined
 
+bar :: forall (m :: CountMode). (CountModeC (CountBy m)) => Sing m -> String -> Result (CountBy m)
+bar m = getResult . foldl' (\count char -> count <> fromChar @(CountBy m) char) mempty
+
+bar' :: CountMode -> String -> Int64
+bar' m = undefined --withSomeSing m bar
+
 type CountByModes :: [CountMode] -> *
 type family CountByModes (ms :: [CountMode]) where
-    CountByModes ms = ListToPairs (Map (TyCon1 CountBy) ms)
+    CountByModes '[] = ()
+    CountByModes (m:ms) = (CountBy m, CountByModes ms)
 
 type ListToPairs :: [*] -> *
 type family ListToPairs as where
