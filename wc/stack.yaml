@@ -39,11 +39,28 @@ packages: [.]
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 
-# added all these since stack told me to, because I guess stack doesn't have them
-# in the resolver which is based on a ghc version. Because "ghc" snapshots are "compiler-only"
+# added all these since stack told me to,
+# Because "ghc" snapshots are "compiler-only"
 # snapshots, and I needed to use a compiler-only snapshot to use a ghc past 9.2; and I need
 # to use the newest ghc to work with singletons-th
 extra-deps:
+  # local fork that upgrades some things to work with newest singletons versions
+  - ../../exinst/exinst
+  - QuickCheck-2.14.2
+  - constraints-0.13.4
+  - hashable-1.4.1.0
+  - profunctors-5.6.2
+  - base-orphans-0.8.7
+  - bifunctors-5.5.12
+  - comonad-5.0.8
+  - contravariant-1.5.5
+  - distributive-0.6.2.1
+  - random-1.2.1.1
+  - splitmix-0.1.0.4
+  - tagged-0.8.6.1
+  - type-equality-1
+  - StateVar-1.2.2
+  - indexed-traversable-0.1.2
   - optparse-applicative-0.17.0.0
   - ansi-wl-pprint-0.6.9
   - singletons-3.0.2
