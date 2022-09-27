@@ -2,11 +2,13 @@
    BangPatterns,
    DataKinds,
    FlexibleInstances,
+   FunctionalDependencies,
    GADTs,
    RankNTypes,
    ScopedTypeVariables,
    TypeApplications,
-   TypeFamilies
+   TypeFamilies,
+   UndecidableInstances
    #-}
 
 module Wc where
@@ -19,18 +21,15 @@ import Data.Char
 -- the CountModeC class
 --
 
-class Monoid m => CountModeC m where
-    type Result m :: *
+class Monoid m => CountModeC r m | m -> r where
     fromChar :: Char -> m
-    getResult :: m -> (Result m)
+    getResult :: m -> r
 
-instance CountModeC () where
-    type Result () = ()
+instance CountModeC () () where
     fromChar _ = ()
     getResult _ = ()
 
-instance (CountModeC m1, CountModeC m2) => CountModeC (m1, m2) where
-    type Result (m1, m2) = (Result m1, Result m2)
+instance (CountModeC r1 m1, CountModeC r2 m2) => CountModeC (r1, r2) (m1, m2) where
     fromChar !c = (fromChar c, fromChar c)
     getResult (!x,!y) = (getResult x, getResult y)
 
@@ -65,8 +64,7 @@ instance Semigroup (CountBy Lines) where
 instance Monoid (CountBy Lines) where
     mempty = CountLines 0
 
-instance CountModeC (CountBy Lines) where
-    type Result (CountBy Lines) = Int64
+instance CountModeC Int64 (CountBy Lines) where
     fromChar c = CountLines $ if c == '\n' then 1 else 0
     getResult (CountLines x) = x
 
@@ -81,8 +79,7 @@ instance Semigroup (CountBy Words) where
 instance Monoid (CountBy Words) where
     mempty = CountWordsEmpty
 
-instance CountModeC (CountBy Words) where
-    type Result (CountBy Words) = Int64
+instance CountModeC Int64 (CountBy Words) where
     fromChar c = if isSpace c
                                then CountWords True 0 True
                                else CountWords False 1 False
@@ -96,8 +93,7 @@ instance Semigroup (CountBy Chars) where
 instance Monoid (CountBy Chars) where
     mempty = CountChars 0
 
-instance CountModeC (CountBy Chars) where
-    type Result (CountBy Chars) = Int64
+instance CountModeC Int64 (CountBy Chars) where
     -- TODO figure out how to do chars and bytes differently
     -- _probably_ do it on ByteStrings, which means we have the bytes directly
     -- and have to get chars from that. 
@@ -111,8 +107,7 @@ instance Semigroup (CountBy Bytes) where
 instance Monoid (CountBy Bytes) where
     mempty = CountBytes 0
 
-instance CountModeC (CountBy Bytes) where
-    type Result (CountBy Bytes) = Int64
+instance CountModeC Int64 (CountBy Bytes) where
     -- TODO figure out how to do chars and bytes differently
     -- _probably_ do it on ByteStrings, which means we have the bytes directly
     -- and have to get chars from that. 
@@ -137,8 +132,7 @@ instance Semigroup (CountBy MaxLineLength) where
 instance Monoid (CountBy MaxLineLength) where
     mempty = CountLineLengthUnbroken 0
 
-instance CountModeC (CountBy MaxLineLength) where
-    type Result (CountBy MaxLineLength) = Int64
+instance CountModeC Int64 (CountBy MaxLineLength) where
     fromChar c = if c == '\n'
                      then CountMaxLineLength 0 0 0
                      else CountLineLengthUnbroken 1

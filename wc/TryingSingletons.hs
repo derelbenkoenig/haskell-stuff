@@ -36,6 +36,13 @@ import Wc
 $(genSingletons [''CountMode])
 $(showSingInstances [''CountMode])
 
+type CountByModes :: [CountMode] -> *
+type family CountByModes (ms :: [CountMode]) where
+    CountByModes '[] = ()
+    CountByModes (m:ms) = (CountBy m, CountByModes ms)
+
+$(genDefunSymbols [''CountByModes])
+
 instance (c (f Words),
           c (f Lines),
           c (f Chars),
@@ -48,38 +55,25 @@ instance (c (f Words),
                   SBytes -> Dict
                   SMaxLineLength -> Dict
 
-class (Result a ~ Int64) => CountsInt64 a
-
 -- I'll change this to operate on ByteString or something later...
-foo :: forall (ms :: [CountMode]) r.
-    (CountModeC (CountByModes ms),
-    PairList (Result (CountByModes ms)) r) =>
+foo :: forall (ms :: [CountMode]) r rs.
+    (CountModeC rs (CountByModes ms),
+     PairList rs r) =>
     Sing ms -> String -> [r]
-foo modes = toList . getResult @(CountByModes ms) .
-    foldl' (\count char -> count <> fromChar @(CountByModes ms) char) mempty
+foo modes = toList . getResult @rs @(CountByModes ms) .
+    foldl' (\count char -> count <> fromChar @rs @(CountByModes ms) char) mempty
 
 foo' :: [CountMode] -> String -> [Int64]
 foo' modes = case toSing modes of
     SomeSing sms -> undefined -- foo sms
 
-bar :: forall (m :: CountMode). (CountModeC (CountBy m)) => Sing m -> String -> Result (CountBy m)
-bar m = getResult . foldl' (\count char -> count <> fromChar @(CountBy m) char) mempty
+bar :: forall (m :: CountMode) r. (CountModeC r (CountBy m)) => Sing m -> String -> r
+bar m = getResult . foldl' (\count char -> count <> fromChar @r @(CountBy m) char) mempty
 
 bar' :: CountMode -> String -> Int64
 bar' m = withSomeSing m $ \(sm :: Sing a) ->
-    case (dict1 sm :: Dict (CountModeC (CountBy a))) of
-        Dict -> case (dict1 sm :: Dict (CountsInt64 (CountBy a))) of
-            Dict -> bar sm
-
-type CountByModes :: [CountMode] -> *
-type family CountByModes (ms :: [CountMode]) where
-    CountByModes '[] = ()
-    CountByModes (m:ms) = (CountBy m, CountByModes ms)
-
-type ListToPairs :: [*] -> *
-type family ListToPairs as where
-    ListToPairs '[] = ()
-    ListToPairs (t ': ts) = (t, ListToPairs ts)
+    case (dict1 sm :: Dict (CountModeC Int64 (CountBy a))) of
+        Dict -> bar sm
 
 class PairList p e where
     toList :: p -> [e]
