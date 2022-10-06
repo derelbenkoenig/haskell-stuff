@@ -17,12 +17,13 @@ main = do
     opts@Opts{..} <- execParser (info (helper <*> parseOpts) myInfoMod)
     results <- mapM (\f -> (f,) <$> handleFile (Set.toAscList mode) f) files
     forM_ results $ \(file, res) -> do
-        putStr $ show res
-        putStr "\t"
-        putStrLn (nameFile file)
-    putStr $ show (totals (map snd results))
-    putStr "\t"
+        printResultLine res
+        putStrLn $ nameFile file
+    printResultLine $ totals $ map snd results
     putStrLn "total"
+
+printResultLine res = forM_ res (\i -> putStr (show i) >> putTab)
+putTab = putStr "\t"
 
 handleFile :: [CountMode] -> FileArgument -> IO [Int64]
 handleFile modes fileArg = fmap (foo' modes) contents where
