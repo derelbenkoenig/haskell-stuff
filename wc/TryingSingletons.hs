@@ -45,15 +45,6 @@ type family CountByModes (ms :: [CountMode]) where
     CountByModes '[] = ()
     CountByModes (m:ms') = (CountBy m, CountByModes ms')
 
--- this is just totally duplicating the relation expressed in the
--- CountModeC class, which even has a fundep in its definition, so I have
--- a feeling this should be unnecessary, but I would need to get the instance
--- resolution to spit out the respective result type for me...
-type family CountModeResult (c :: Type) where
-    CountModeResult (CountBy (m :: CountMode)) = Int64
-    CountModeResult () = ()
-    CountModeResult (a, b) = (CountModeResult a, CountModeResult b)
-
 type family CountModesResult (ms :: [k]) where
     CountModesResult '[] = ()
     CountModesResult (m ': ms') = (Int64, CountModesResult ms')
