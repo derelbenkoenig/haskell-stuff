@@ -14,13 +14,14 @@ import Control.Monad
 
 main :: IO ()
 main = do
-    opts@Opts{..} <- execParser (info (helper <*> parseOpts) myInfoMod)
+    Opts{..} <- execParser (info (helper <*> parseOpts) myInfoMod)
     results <- mapM (\f -> (f,) <$> handleFile (Set.toAscList mode) f) files
     forM_ results $ \(file, res) -> do
         printResultLine res
         putStrLn $ nameFile file
-    printResultLine $ totals $ map snd results
-    putStrLn "total"
+    when (isLengthAtLeast 2 results) $ do
+        printResultLine $ totals $ map snd results
+        putStrLn "total"
 
 printResultLine res = forM_ res (\i -> putStr (show i) >> putTab)
 putTab = putStr "\t"
@@ -35,6 +36,10 @@ nameFile :: FileArgument -> String
 nameFile fileArg = case fileArg of
     Filename fp -> fp
     Stdin -> "-"
+
+isLengthAtLeast n xs = if n <= 0 then True else go xs where
+    go [] = False
+    go (_:xs') = isLengthAtLeast (n - 1) xs'
 
 myInfoMod = fullDesc
     <> header ("Print  newline,  word, and byte counts for each FILE, and a total line "

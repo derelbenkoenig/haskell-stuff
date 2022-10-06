@@ -148,7 +148,3 @@ testStr = "abcdef\nab\nab cd\n"
 
 totals :: [[Int64]] -> [Int64]
 totals = foldl' (zipWith (+)) (repeat 0)
-
-isLengthAtLeast n xs = if n <= 0 then True else go xs where
-    go [] = False
-    go (_:xs') = isLengthAtLeast (n - 1) xs'
