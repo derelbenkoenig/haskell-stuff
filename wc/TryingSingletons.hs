@@ -121,7 +121,7 @@ countByConsDict sm sms = let
 andDict :: Dict a -> Dict b -> Dict (a, b)
 andDict da db = Dict \\ da \\ db
 
--- I'll change this to operate on ByteString or something later...
+-- TODO use ByteString or something instead
 foo :: forall (ms :: [CountMode]) r rs.
     (CountModeC rs (CountByModes ms),
      PairList r rs) =>
@@ -129,7 +129,6 @@ foo :: forall (ms :: [CountMode]) r rs.
 foo modes = toList . getResult @rs @(CountByModes ms) .
     foldl' (\count char -> count <> fromChar @rs @(CountByModes ms) char) mempty
 
--- TODO I probably need to use a Some1 instance for PairList or something?
 foo' :: [CountMode] -> String -> [Int64]
 foo' ms = withSomeSing ms $ \(sms :: Sing (ms' :: [CountMode])) ->
     case countByModesDict sms of Dict -> foo sms

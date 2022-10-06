@@ -34,7 +34,7 @@ handleFile modes fileArg = fmap (foo' modes) contents where
 nameFile :: FileArgument -> String
 nameFile fileArg = case fileArg of
     Filename fp -> fp
-    Stdin -> "stdin"
+    Stdin -> "-"
 
 myInfoMod = fullDesc
     <> header ("Print  newline,  word, and byte counts for each FILE, and a total line "
