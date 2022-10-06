@@ -117,15 +117,14 @@ foo :: forall (ms :: [CountMode]) r rs.
     (CountModeC rs (CountByModes ms),
      PairList r rs) =>
     Sing ms -> String -> [r]
-foo modes = toList . getResult @rs @(CountByModes ms) .
-    foldl' (\count char -> count <> fromChar @rs @(CountByModes ms) char) mempty
+foo modes = toList . wordCount @rs @(CountByModes ms)
 
 foo' :: [CountMode] -> String -> [Int64]
 foo' ms = withSomeSing ms $ \(sms :: Sing (ms' :: [CountMode])) ->
     case countByModesDict sms of Dict -> foo sms
 
 bar :: forall (m :: CountMode) r. (CountModeC r (CountBy m)) => Sing m -> String -> r
-bar m = getResult . foldl' (\count char -> count <> fromChar @r @(CountBy m) char) mempty
+bar m = wordCount @r @(CountBy m)
 
 bar' :: CountMode -> String -> Int64
 bar' m = withSomeSing m $ \(sm :: Sing a) ->
