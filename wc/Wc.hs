@@ -1,4 +1,5 @@
 {-# LANGUAGE
+   AllowAmbiguousTypes,
    BangPatterns,
    DataKinds,
    FlexibleInstances,
@@ -25,6 +26,10 @@ class Monoid m => CountModeC r m | m -> r where
     fromChar :: Char -> m
     getResult :: m -> r
 
+wordCount :: forall r m. CountModeC r m => String -> r
+wordCount = getResult @r @m .
+    foldl' (\count char -> count <> fromChar @r @m char) mempty
+
 instance CountModeC () () where
     fromChar _ = ()
     getResult _ = ()
@@ -45,17 +50,17 @@ data CountMode = Lines | Words | Chars | Bytes | MaxLineLength
 --
 
 data CountBy (m :: CountMode) where
-    CountLines :: !Int64 -> CountBy Lines
-    CountWords :: { whitespaceLeft :: !Bool,
-                    currentCount :: !Int64,
-                    whitespaceRight :: !Bool } -> CountBy Words
+    CountLines :: {-# UNPACK #-} !Int64 -> CountBy Lines
+    CountWords :: { whitespaceLeft :: {-# UNPACK #-} !Bool,
+                    currentCount :: {-# UNPACK #-} !Int64,
+                    whitespaceRight :: {-# UNPACK #-} !Bool } -> CountBy Words
     CountWordsEmpty :: CountBy Words
-    CountChars :: !Int64 -> CountBy Chars
-    CountBytes :: !Int64 -> CountBy Bytes
-    CountLineLengthUnbroken :: { lineLength :: !Int64 } -> CountBy MaxLineLength
-    CountMaxLineLength :: { lengthLeft :: !Int64,
-                            knownMax :: !Int64,
-                            lengthRight :: !Int64 } -> CountBy MaxLineLength
+    CountChars :: {-# UNPACK #-} !Int64 -> CountBy Chars
+    CountBytes :: {-# UNPACK #-} !Int64 -> CountBy Bytes
+    CountLineLengthUnbroken :: { lineLength :: {-# UNPACK #-} !Int64 } -> CountBy MaxLineLength
+    CountMaxLineLength :: { lengthLeft :: {-# UNPACK #-} !Int64,
+                            knownMax :: {-# UNPACK #-} !Int64,
+                            lengthRight :: {-# UNPACK #-} !Int64 } -> CountBy MaxLineLength
 
 -- instances for lines
 --
@@ -71,10 +76,10 @@ instance CountModeC Int64 (CountBy Lines) where
 -- instances for words
 --
 instance Semigroup (CountBy Words) where
-    CountWordsEmpty <> x = x
-    x <> CountWordsEmpty = x
-    CountWords l c False <> CountWords False c' r' = CountWords l (c + c' - 1) r'
-    CountWords l c _ <> CountWords _ c' r' = CountWords l (c + c') r'
+    CountWordsEmpty <> !x = x
+    !x <> CountWordsEmpty = x
+    CountWords !l !c !False <> CountWords !False !c' !r' = CountWords l (c + c' - 1) r'
+    CountWords !l !c _ <> CountWords _ !c' !r' = CountWords l (c + c') r'
 
 instance Monoid (CountBy Words) where
     mempty = CountWordsEmpty
