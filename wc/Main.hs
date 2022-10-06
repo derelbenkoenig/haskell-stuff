@@ -26,7 +26,7 @@ printResultLine res = forM_ res (\i -> putStr (show i) >> putTab)
 putTab = putStr "\t"
 
 handleFile :: [CountMode] -> FileArgument -> IO [Int64]
-handleFile modes fileArg = fmap (foo' modes) contents where
+handleFile modes fileArg = fmap (countByModes modes) contents where
     contents = case fileArg of
         Stdin -> getContents
         Filename s -> readFile s

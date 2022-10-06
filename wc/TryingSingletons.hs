@@ -113,19 +113,19 @@ andDict :: Dict a -> Dict b -> Dict (a, b)
 andDict da db = Dict \\ da \\ db
 
 -- TODO use ByteString or something instead
-foo :: forall (ms :: [CountMode]) r rs.
+countByModesSing :: forall (ms :: [CountMode]) r rs.
     (CountModeC rs (CountByModes ms),
      PairList r rs) =>
     Sing ms -> String -> [r]
-foo modes = toList . wordCount @rs @(CountByModes ms)
+countByModesSing modes = toList . wordCount @rs @(CountByModes ms)
 
-foo' :: [CountMode] -> String -> [Int64]
-foo' ms = withSomeSing ms $ \(sms :: Sing (ms' :: [CountMode])) ->
-    case countByModesDict sms of Dict -> foo sms
+countByModes :: [CountMode] -> String -> [Int64]
+countByModes ms = withSomeSing ms $ \(sms :: Sing (ms' :: [CountMode])) ->
+    case countByModesDict sms of Dict -> countByModesSing sms
 
-bar :: forall (m :: CountMode) r. (CountModeC r (CountBy m)) => Sing m -> String -> r
-bar m = wordCount @r @(CountBy m)
+countByModeSing :: forall (m :: CountMode) r. (CountModeC r (CountBy m)) => Sing m -> String -> r
+countByModeSing m = wordCount @r @(CountBy m)
 
-bar' :: CountMode -> String -> Int64
-bar' m = withSomeSing m $ \(sm :: Sing a) ->
-    withDict (dict1 sm :: Dict (CountModeC Int64 (CountBy a))) (bar sm)
+countByMode :: CountMode -> String -> Int64
+countByMode m = withSomeSing m $ \(sm :: Sing a) ->
+    withDict (dict1 sm :: Dict (CountModeC Int64 (CountBy a))) (countByModeSing sm)
