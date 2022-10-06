@@ -1,3 +1,7 @@
+{-# LANGUAGE
+   RecordWildCards,
+   TupleSections
+   #-}
 module Main where
 
 import Wc
@@ -5,14 +9,37 @@ import TryingSingletons
 import Options.Applicative
 import qualified Data.Set as Set
 import Data.Maybe
+import Data.Int
+import Control.Monad
 
 main :: IO ()
-main = execParser (info (helper <*> parseOpts) myInfoMod) >>= print
+main = do
+    opts@Opts{..} <- execParser (info (helper <*> parseOpts) myInfoMod)
+    results <- mapM (\f -> (f,) <$> handleFile (Set.toAscList mode) f) files
+    forM_ results $ \(file, res) -> do
+        putStr $ show res
+        putStr "\t"
+        putStrLn (nameFile file)
+    putStr $ show (totals (map snd results))
+    putStr "\t"
+    putStrLn "total"
+
+handleFile :: [CountMode] -> FileArgument -> IO [Int64]
+handleFile modes fileArg = fmap (foo' modes) contents where
+    contents = case fileArg of
+        Stdin -> getContents
+        Filename s -> readFile s
+
+nameFile :: FileArgument -> String
+nameFile fileArg = case fileArg of
+    Filename fp -> fp
+    Stdin -> "stdin"
 
 myInfoMod = fullDesc
     <> header ("Print  newline,  word, and byte counts for each FILE, and a total line "
         ++ "if more than one FILE is specified.  A word is a non-zero-length sequence of "
-        ++ "printable  characters  delimited  by  white space.")
+        ++ "printable  characters  delimited  by  white space."
+        ++ "\nWith no FILE, or when FILE is -, read standard input")
 
 data Opts = Opts { mode :: (Set.Set CountMode), files :: [FileArgument] }
     deriving Show
