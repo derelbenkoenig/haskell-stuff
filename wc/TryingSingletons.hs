@@ -45,7 +45,7 @@ type family CountByModes (ms :: [CountMode]) where
     CountByModes '[] = ()
     CountByModes (m:ms') = (CountBy m, CountByModes ms')
 
-type family CountModesResult (ms :: [k]) where
+type family CountModesResult (ms :: [CountMode]) where
     CountModesResult '[] = ()
     CountModesResult (m ': ms') = (Int64, CountModesResult ms')
 
