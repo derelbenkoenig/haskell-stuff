@@ -1,6 +1,7 @@
 # `wc` with dependent types.
 
-See also: https://github.com/ChrisPenner/wc
+See also: https://github.com/ChrisPenner/wc for a project that does some of this (but not the part
+with dependent types)
 
 ## Counting by modes, monoidally
 
