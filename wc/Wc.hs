@@ -5,10 +5,9 @@
    FlexibleInstances,
    FunctionalDependencies,
    GADTs,
-   RankNTypes,
    ScopedTypeVariables,
    TypeApplications,
-   TypeFamilies,
+   KindSignatures,
    UndecidableInstances
    #-}
 
