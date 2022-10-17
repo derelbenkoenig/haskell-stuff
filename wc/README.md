@@ -7,7 +7,7 @@ See also: https://github.com/ChrisPenner/wc
 `wc` itself gives five different options for how to "count" the input text. Some of them are sort of "stateful"
 or at least "context-dependent" in some way, particularly counting the number of words or the maximum line length.
 They do, however, all share the property that they can be done in a "monoidal" way. This means using:
-1. Using a data type that keeps around whatever contextual metadata is necessary while counting, and
+1. A data type that keeps around whatever contextual metadata is necessary while counting, and
 2. An operation for combining those pieces of information which is associative but not necessarily commutative,
    and which has some "identity" or "neutral element" (representing an "empty" chunk of text).
 Imagine taking the text, splitting it into chunks, couting up each chunk, and then combining those counts together.
