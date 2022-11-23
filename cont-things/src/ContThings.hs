@@ -6,3 +6,4 @@ someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
 foo :: Cont r a
+foo = undefined
