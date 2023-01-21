@@ -21,14 +21,19 @@ data GameState t a = GameState {
     otherData :: a
 } deriving (Functor, Eq, Show)
 
-initialGameState :: TimeValue t => GameState t ()
-initialGameState = GameState {
+makeInitialGameState :: TimeValue t => a -> GameState t a
+makeInitialGameState a = GameState {
     desiredTime = 0,
     updatedTime = 0,
     deltaTime = 1/60,
-    otherData = ()
+    otherData = a
 }
 
+emptyInitialGameState :: TimeValue t => GameState t ()
+emptyInitialGameState = makeInitialGameState ()
+
+-- TODO this may not be sufficient as the update may depend on both the current
+-- time and time delta, not just the delta
 class TimeSteppable a where
     timeStep :: forall t. TimeValue t => t -> a -> a
 
@@ -45,8 +50,8 @@ stepState gstate@GameState{..} =
 canStepState :: TimeValue t => GameState t a -> Bool
 canStepState GameState{..} = updatedTime + deltaTime < desiredTime
 
-runGame :: IO ()
-runGame = do
+runGame :: (TimeValue t, TimeSteppable a) => GameState t a -> IO ()
+runGame initialGameState = do
     initializeAll
     let windowCfg = defaultWindow {
         -- TODO I have no idea if I need VulkanContext
@@ -54,19 +59,14 @@ runGame = do
     }
     window <- createWindow "Playing with graphics in Haskell" windowCfg
     renderer <- createRenderer window (-1) defaultRenderer
-    appLoop renderer initialGameState
+    curTime <- Time.time
+    appLoop renderer (initialGameState{updatedTime = curTime})
     destroyWindow window
 
-appLoop :: Renderer -> GameState Double () -> IO ()
+appLoop :: (TimeValue t, TimeSteppable a) => Renderer -> GameState t a -> IO ()
 appLoop renderer gameState = do
     events <- pollEvents
-    let eventIsQPress event =
-            case eventPayload event of
-                KeyboardEvent keyboardEvent ->
-                    keyboardEventKeyMotion keyboardEvent == Pressed &&
-                        keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
-                _ -> False
-        qPressed = any eventIsQPress events
+    let qPressed = any isQPress events
     curTime <- Time.time
     let newGameState = until (not . canStepState) 
                         stepState (gameState{desiredTime = curTime})
@@ -74,3 +74,11 @@ appLoop renderer gameState = do
     clear renderer
     present renderer
     unless qPressed (appLoop renderer newGameState)
+
+isQPress :: Event -> Bool
+isQPress event = 
+    case eventPayload event of
+        KeyboardEvent keyboardEvent ->
+            keyboardEventKeyMotion keyboardEvent == Pressed &&
+                keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
+        _ -> False
