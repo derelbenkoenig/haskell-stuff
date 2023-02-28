@@ -45,7 +45,7 @@ packages: [.]
 # to use the newest ghc to work with singletons-th
 extra-deps:
   # local fork that upgrades some things to work with newest singletons versions
-  - ../../exinst/exinst
+  - exinst-0.9
   - QuickCheck-2.14.2
   - constraints-0.13.4
   - hashable-1.4.1.0

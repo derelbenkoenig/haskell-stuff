@@ -29,7 +29,7 @@ executable wc
                         , bytestring
                         , containers
                         , constraints
-                        , exinst >= 0.8
+                        , exinst >= 0.9
                         , singletons >= 3.0.2
                         , singletons-th >= 3.1.1
                         , singletons-base >= 3.1.1

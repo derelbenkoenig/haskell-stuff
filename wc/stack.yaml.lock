@@ -5,6 +5,13 @@
 
 packages:
 - completed:
+    hackage: exinst-0.9@sha256:f211026788df975db7e79f1104238e9dcb24fd9df663df1d8aa10ff398a574ba,1024
+    pantry-tree:
+      sha256: 7c5f992b22296a6d9977c615c391b88f2ef02e709673acef2ea53b7a14f5f134
+      size: 718
+  original:
+    hackage: exinst-0.9
+- completed:
     hackage: QuickCheck-2.14.2@sha256:4ce29211223d5e6620ebceba34a3ca9ccf1c10c0cf387d48aea45599222ee5aa,7736
     pantry-tree:
       sha256: 2fe423d0ed7cd64f0f165d708779f48814e66c4f181c568468134af55d86a5f8
