@@ -1,60 +1,28 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Lib where
+module Lib (
+  module GameState,
+  runGame
+) where
 
 import SDL
 import qualified SDL.Time as Time
 import qualified SDL.Video as Video
 import Control.Monad (unless)
+import TimeStep
+import GameState
 
-type TimeValue t = (Ord t, Fractional t)
-
-data GameState t a = GameState {
-    desiredTime :: t,
-    updatedTime :: t,
-    deltaTime :: t,
-    otherData :: a
-} deriving (Functor, Eq, Show)
-
-makeInitialGameState :: TimeValue t => a -> GameState t a
-makeInitialGameState a = GameState {
-    desiredTime = 0,
-    updatedTime = 0,
-    deltaTime = 1/60,
-    otherData = a
-}
-
-emptyInitialGameState :: TimeValue t => GameState t ()
-emptyInitialGameState = makeInitialGameState ()
-
--- TODO this may not be sufficient as the update may depend on both the current
--- time and time delta, not just the delta
-class TimeSteppable a where
-    timeStep :: forall t. TimeValue t => t -> a -> a
-
-instance TimeSteppable () where
-    timeStep _ = id
-
-stepState :: (TimeValue t, TimeSteppable a) => GameState t a -> GameState t a
-stepState gstate@GameState{..} =
-    if canStepState gstate
-        then gstate {updatedTime = updatedTime + deltaTime,
-                     otherData = timeStep deltaTime otherData}
-        else gstate
-
-canStepState :: TimeValue t => GameState t a -> Bool
-canStepState GameState{..} = updatedTime + deltaTime < desiredTime
+myLast :: [a] -> Maybe a
+myLast [] = Nothing
+myLast [x] = Just x
+myLast (_:xs) = myLast xs
 
 runGame :: (TimeValue t, TimeSteppable a) => GameState t a -> IO ()
 runGame initialGameState = do
     initializeAll
     let windowCfg = defaultWindow {
-        -- TODO I have no idea if I need VulkanContext
+        -- TODO I have no idea if I am gonna need VulkanContext
         windowGraphicsContext = Video.VulkanContext
     }
     window <- createWindow "Playing with graphics in Haskell" windowCfg
