@@ -17,7 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: ghc-9.4
+resolver: nightly-2023-03-24
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -45,40 +45,40 @@ packages: [.]
 # to use the newest ghc to work with singletons-th
 extra-deps:
   # local fork that upgrades some things to work with newest singletons versions
-  - exinst-0.9
-  - QuickCheck-2.14.2
-  - constraints-0.13.4
-  - hashable-1.4.1.0
-  - profunctors-5.6.2
-  - base-orphans-0.8.7
-  - bifunctors-5.5.12
-  - comonad-5.0.8
-  - contravariant-1.5.5
-  - distributive-0.6.2.1
-  - random-1.2.1.1
-  - splitmix-0.1.0.4
-  - tagged-0.8.6.1
-  - type-equality-1
-  - StateVar-1.2.2
-  - indexed-traversable-0.1.2
-  - optparse-applicative-0.17.0.0
-  - ansi-wl-pprint-0.6.9
-  - singletons-3.0.2
-  - singletons-base-3.1.1
-  - singletons-th-3.1.1
-  - transformers-compat-0.7.2
-  - ansi-terminal-0.11.3
-  - syb-0.7.2.1
-  - th-desugar-1.14
-  - th-orphans-0.13.14
-  - colour-2.3.6
-  - ordered-containers-0.2.2
-  - th-abstraction-0.4.4.0
-  - th-compat-0.1.4
-  - th-lift-0.8.2
-  - th-reify-many-0.1.10
-  - safe-0.3.19
-  - th-expand-syns-0.4.10.0
+  # - exinst-0.9
+  # - QuickCheck-2.14.2
+  # - constraints-0.13.4
+  # - hashable-1.4.1.0
+  # - profunctors-5.6.2
+  # - base-orphans-0.8.7
+  # - bifunctors-5.5.12
+  # - comonad-5.0.8
+  # - contravariant-1.5.5
+  # - distributive-0.6.2.1
+  # - random-1.2.1.1
+  # - splitmix-0.1.0.4
+  # - tagged-0.8.6.1
+  # - type-equality-1
+  # - StateVar-1.2.2
+  # - indexed-traversable-0.1.2
+  # - optparse-applicative-0.17.0.0
+  # - ansi-wl-pprint-0.6.9
+  # - singletons-3.0.2
+  # - singletons-base-3.1.1
+  # - singletons-th-3.1.1
+  # - transformers-compat-0.7.2
+  # - ansi-terminal-0.11.3
+  # - syb-0.7.2.1
+  # - th-desugar-1.14
+  # - th-orphans-0.13.14
+  # - colour-2.3.6
+  # - ordered-containers-0.2.2
+  # - th-abstraction-0.4.4.0
+  # - th-compat-0.1.4
+  # - th-lift-0.8.2
+  # - th-reify-many-0.1.10
+  # - safe-0.3.19
+  # - th-expand-syns-0.4.10.0
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

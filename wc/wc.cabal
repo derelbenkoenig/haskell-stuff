@@ -20,7 +20,7 @@ executable wc
   main-is:             Main.hs
   other-modules:
     Wc,
-    TryingSingletons
+    TryingSingletons,
   -- other-extensions:
   build-depends:       base >= 4.17 
                         , optparse-applicative
