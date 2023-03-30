@@ -29,10 +29,16 @@ vecToText = T.pack . V.foldr' (:) ""
 boolVecToInt :: V.Vector Bool -> Int
 boolVecToInt = V.foldl' (\n digit -> n * 2 + fromEnum digit) 0
 
+-- while in theory the update of a cell could depend on neighbors further
+-- away than the immediate ones, most of the common rules do only use the 
+-- immediate ones
+getImmediateNeighbors :: Int -> V.Vector Int
+getImmediateNeighbors i = V.enumFromTo (i - 1) (i + 1)
+
 rule30 :: ((V.Vector Bool -> Bool) -> (Int -> V.Vector Int) -> a) -> a
 rule30 k = k update getNeighbors where
     update v = let n = boolVecToInt v in n >=1 && n <= 4
-    getNeighbors i = V.enumFromTo (i-1) (i+1)
+    getNeighbors = getImmediateNeighbors
 
 printSteps :: (V.Vector Bool -> Bool)
            -> (Int -> V.Vector Int)
