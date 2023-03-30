@@ -46,14 +46,14 @@ fillLeft z n v =
      in V.generate n (\i -> if i < offset then z else v V.! (i - offset))
 
 -- while in theory the update of a cell could depend on neighbors further
--- away than the immediate ones, most of the common rules do only use the 
+-- away than the immediate ones, most of the common rules do only use the
 -- immediate ones
 getImmediateNeighbors :: Int -> V.Vector Int
 getImmediateNeighbors i = V.enumFromTo (i - 1) (i + 1)
 
 numRule :: Word8 -> ((V.Vector Bool -> Bool) -> (Int -> V.Vector Int) -> a) -> a
 numRule n k =
-    k 
+    k
     -- the rule itself is represented as 8 bits, a zero or one for each
     -- possible value of the neighbors, which itself is viewed as a binary
     -- number by treating its values as bits
@@ -82,10 +82,16 @@ lastCellOn :: Automaton
 lastCellOn = let lastIndex = cellArrayLen - 1
               in Automaton $ store (== lastIndex) undefined
 
-randomCellsOn :: MonadRandom m => m Automaton
-randomCellsOn =
+initializeCellsM :: Monad m => m Bool -> m Automaton
+initializeCellsM m =
     (\v -> Automaton $ StoreT (Identity $ CellArray v) undefined)
-    <$> V.replicateM cellArrayLen getRandom
+    <$> V.replicateM cellArrayLen m
+
+randomCellsOn :: MonadRandom m => m Automaton
+randomCellsOn = initializeCellsM getRandom
+
+weightedRandomCellsOn :: MonadRandom m => Rational -> m Automaton
+weightedRandomCellsOn r = initializeCellsM $ weighted [(True, r), (False, 1-r)]
 
 instance Functor CellArray where
     fmap f (CellArray v) = CellArray $ fmap f v
