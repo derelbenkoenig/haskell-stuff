@@ -61,38 +61,6 @@ numRule n k =
         fillLeft False 8 (integralToBoolVec n) V.! (7 - boolVecToInt neighbors))
     getImmediateNeighbors
 
-printSteps :: (V.Vector Bool -> Bool)
-           -> (Int -> V.Vector Int)
-           -> Int
-           -> Automaton
-           -> IO ()
-printSteps update getNeighbors n a
-  | n <= 0 = return ()
-  | otherwise = T.putStrLn (displayAutomaton a) >>
-      printSteps update getNeighbors (n-1)
-      (stepAutomaton update getNeighbors a)
-
--- using undefined for the starting index since it should never
--- matter, we only do operations that operate on all indices via 'extend'
-middleCellOn :: Automaton
-middleCellOn = let middleIndex = cellArrayLen `div` 2
-                in Automaton $ store (== middleIndex) undefined
-
-lastCellOn :: Automaton
-lastCellOn = let lastIndex = cellArrayLen - 1
-              in Automaton $ store (== lastIndex) undefined
-
-initializeCellsM :: Monad m => m Bool -> m Automaton
-initializeCellsM m =
-    (\v -> Automaton $ StoreT (Identity $ CellArray v) undefined)
-    <$> V.replicateM cellArrayLen m
-
-randomCellsOn :: MonadRandom m => m Automaton
-randomCellsOn = initializeCellsM getRandom
-
-weightedRandomCellsOn :: MonadRandom m => Rational -> m Automaton
-weightedRandomCellsOn r = initializeCellsM $ weighted [(True, r), (False, 1-r)]
-
 instance Functor CellArray where
     fmap f (CellArray v) = CellArray $ fmap f v
 
@@ -116,3 +84,35 @@ stepAutomaton :: (V.Vector Bool -> Bool) -- ^ get new value from neighborhood
               -> Automaton
 stepAutomaton update getNeighbors (Automaton a) = Automaton $
     extend (update . experiment getNeighbors) a
+
+-- using undefined for the starting index since it should never
+-- matter, we only do operations that operate on all indices via 'extend'
+middleCellOn :: Automaton
+middleCellOn = let middleIndex = cellArrayLen `div` 2
+                in Automaton $ store (== middleIndex) undefined
+
+lastCellOn :: Automaton
+lastCellOn = let lastIndex = cellArrayLen - 1
+              in Automaton $ store (== lastIndex) undefined
+
+initializeCellsM :: Monad m => m Bool -> m Automaton
+initializeCellsM m =
+    (\v -> Automaton $ StoreT (Identity $ CellArray v) undefined)
+    <$> V.replicateM cellArrayLen m
+
+randomCellsOn :: MonadRandom m => m Automaton
+randomCellsOn = initializeCellsM getRandom
+
+weightedRandomCellsOn :: MonadRandom m => Rational -> m Automaton
+weightedRandomCellsOn r = initializeCellsM $ weighted [(True, r), (False, 1-r)]
+
+printSteps :: (V.Vector Bool -> Bool)
+           -> (Int -> V.Vector Int)
+           -> Int
+           -> Automaton
+           -> IO ()
+printSteps update getNeighbors n a
+  | n <= 0 = return ()
+  | otherwise = T.putStrLn (displayAutomaton a) >>
+      printSteps update getNeighbors (n-1)
+      (stepAutomaton update getNeighbors a)
