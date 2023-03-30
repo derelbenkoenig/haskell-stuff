@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE RankNTypes #-}
 module CellularAutomata where
 
 import Control.Comonad
@@ -29,11 +30,34 @@ vecToText = T.pack . V.foldr' (:) ""
 boolVecToInt :: V.Vector Bool -> Int
 boolVecToInt = V.foldl' (\n digit -> n * 2 + fromEnum digit) 0
 
+intToBoolVec :: Int -> V.Vector Bool
+intToBoolVec 0 = V.empty
+intToBoolVec i
+  | i < 0 = error "cannot convert negative number to bits"
+  | otherwise = let (halfI, bit) = i `divMod` 2
+                 in intToBoolVec halfI V.++ V.singleton (toEnum bit)
+
+fillLeft :: a -> Int -> V.Vector a -> V.Vector a
+fillLeft z n v =
+    let offset = max 0 (n - V.length v)
+     in V.generate n (\i -> if i < offset then z else v V.! (i - offset))
+
 -- while in theory the update of a cell could depend on neighbors further
 -- away than the immediate ones, most of the common rules do only use the 
 -- immediate ones
 getImmediateNeighbors :: Int -> V.Vector Int
 getImmediateNeighbors i = V.enumFromTo (i - 1) (i + 1)
+
+numRule :: Int -> ((V.Vector Bool -> Bool) -> (Int -> V.Vector Int) -> a) -> a
+numRule n k =
+    k 
+    -- the rule itself is represented as 8 bits, a zero or one for each
+    -- possible value of the neighbors, which itself is viewed as a binary
+    -- number by treating its values as bits
+    (\neighbors ->
+        fillLeft False 8 (intToBoolVec n) V.! (7 - boolVecToInt neighbors))
+    getImmediateNeighbors
+
 
 rule30 :: ((V.Vector Bool -> Bool) -> (Int -> V.Vector Int) -> a) -> a
 rule30 k = k update getNeighbors where
@@ -70,7 +94,7 @@ instance Representable CellArray where
 getStore :: Store g a -> g a
 getStore (StoreT (Identity ga) _) = ga
 
-newtype Automaton = Automaton (Store CellArray Bool)
+newtype Automaton = Automaton { getAutomaton :: Store CellArray Bool }
 
 stepAutomaton :: (V.Vector Bool -> Bool) -- ^ get new value from neighborhood
               -> (Int -> V.Vector Int) -- ^ get neighborhood indices
