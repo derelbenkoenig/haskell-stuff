@@ -21,7 +21,7 @@ newtype CellArray a = CellArray { getCellArray :: V.Vector a }
 
 displayAutomaton :: Automaton -> T.Text
 displayAutomaton (Automaton w) =
-    vecToText $ fmap (bool ' ' '#') $ getCellArray $ getStore w
+    vecToText $ fmap (bool '░' '█') $ getCellArray $ getStore w
 
 vecToText :: V.Vector Char -> T.Text
 vecToText = T.pack . V.foldr' (:) ""
