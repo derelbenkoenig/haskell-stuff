@@ -79,6 +79,10 @@ middleCellOn :: Automaton
 middleCellOn = let middleIndex = cellArrayLen `div` 2
                 in Automaton $ store (== middleIndex) middleIndex
 
+lastCellOn :: Automaton
+lastCellOn = let lastIndex = cellArrayLen - 1
+              in Automaton $ store (== lastIndex) lastIndex
+
 instance Functor CellArray where
     fmap f (CellArray v) = CellArray $ fmap f v
 
