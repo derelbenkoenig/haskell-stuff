@@ -45,16 +45,6 @@ printSteps update getNeighbors n a
       printSteps update getNeighbors (n-1)
       (stepAutomaton update getNeighbors a)
 
-sliceWrapping :: Int -> Int -> V.Vector a -> V.Vector a
-sliceWrapping start len v =
-    let endIdx = start + len
-        capacity = V.length v
-     in if endIdx <= capacity
-           then V.slice start len v
-           else let endLen = endIdx - capacity
-                    startLen = endLen - len
-                 in V.slice start endLen v V.++ V.slice 0 startLen v
-
 middleCellOn :: Automaton
 middleCellOn = let middleIndex = cellArrayLen `div` 2
                 in Automaton $ store (== middleIndex) middleIndex
