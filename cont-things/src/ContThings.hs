@@ -1,52 +1,127 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module ContThings where
 
-import Data.Functor ((<&>))
-import Control.Monad.Cont
-import Control.Monad.Trans
+import Data.Monoid (Endo(..))
+import Control.Applicative
 
-newtype Coroutine s m r = Coroutine { resume :: m (CoroutineState s m r) }
+newtype Yoneda f a = Yoneda { runYoneda :: forall r. (a -> r) -> f r }
 
-data CoroutineState s m r = Run (s (Coroutine s m r)) | Done r
+instance Functor (Yoneda f) where
+    fmap f (Yoneda g) = Yoneda $ \h -> g (h . f)
 
-instance (Functor s, Functor m) => Functor (Coroutine s m) where
-    fmap f (Coroutine m) = Coroutine $ m <&> \case
-        Done r -> Done $ f r
-        Run s -> Run $ (fmap . fmap) f s
+liftYoneda :: Functor f => f a -> Yoneda f a
+liftYoneda fa = Yoneda $ \g -> fmap g fa
 
-instance (Functor s, Applicative m) => Applicative (Coroutine s m) where
-    pure a = Coroutine $ pure $ Done a
-    f <*> a = undefined
+lowerYoneda :: Yoneda f a -> f a
+lowerYoneda (Yoneda g) = g id
 
-instance (Functor s, Monad m) => Monad (Coroutine s m) where
+newtype YonedaEndo a = YonedaEndo { getYonedaEndo :: Yoneda Endo a }
+
+runYonedaEndo :: YonedaEndo a -> forall r. (a -> r) -> r -> r
+runYonedaEndo = (\f k r -> appEndo (f k) r) . runYoneda . getYonedaEndo
+
+instance Functor YonedaEndo where
+    -- more involved than necessary; we could leave out the Endo part
+    -- entirely, i.e.: \h -> g (h . f)
+    -- but if you want the Endo part to be visible...
+    fmap f (YonedaEndo (Yoneda g)) =
+        YonedaEndo $ Yoneda $
+            \h -> Endo $ \r -> appEndo (g (h . f)) r
+
+instance Applicative YonedaEndo where
+    pure a = YonedaEndo $ Yoneda $ \h -> Endo $ \_ -> h a
+    YonedaEndo (Yoneda f) <*> YonedaEndo (Yoneda g) =
+        YonedaEndo $ Yoneda $
+            \h -> Endo $ \r -> appEndo (f (\k -> appEndo (g (h . k)) r)) r
+
+instance Alternative YonedaEndo where
+    empty = YonedaEndo $ Yoneda $ \_ -> Endo id
+    YonedaEndo (Yoneda f) <|> YonedaEndo (Yoneda g) =
+        YonedaEndo $ Yoneda $
+            \h -> Endo $ \r -> appEndo (f h) (appEndo (g h) r)
+
+instance Monad YonedaEndo where
     return = pure
-    c >>= f = undefined
+    (YonedaEndo (Yoneda f)) >>= g =
+        YonedaEndo $ Yoneda $
+            \h -> Endo $ \r -> appEndo (f (\a -> runYonedaEndo (g a) h r)) r
 
-instance Functor s => MonadTrans (Coroutine s) where
-    lift = undefined
+-- I wish join and (>>=) were both methods of Monad and you could implement
+-- either for a minimal definition. But instead join is just a function
+-- implemented in terms of (>>=). But, I would like to implement join anyway
+-- just for the exercise
+joinYonedaEndo :: YonedaEndo (YonedaEndo a) -> YonedaEndo a
+joinYonedaEndo (YonedaEndo (Yoneda f)) =
+    YonedaEndo $ Yoneda $ \g -> Endo $ \r ->
+        appEndo (f (\(YonedaEndo (Yoneda h)) -> appEndo (h g) r)) r
 
-suspend :: (Monad m, Functor s) => s (Coroutine s m x) -> Coroutine s m x
-suspend s = Coroutine (return (Run s))
+-- Yoneda Endo ~~ Maybe
+yonedaEndoToMaybe :: YonedaEndo a -> Maybe a
+yonedaEndoToMaybe (YonedaEndo (Yoneda f)) = appEndo (f Just) Nothing
 
-data Interface i o x = Produced o (i -> x)
+yonedaEndoFromMaybe :: Maybe a -> YonedaEndo a
+yonedaEndoFromMaybe Nothing = YonedaEndo $ Yoneda $ \_ -> Endo id
+yonedaEndoFromMaybe (Just x) = YonedaEndo $ Yoneda $ \k -> Endo (const (k x))
 
-instance Functor (Interface i o) where
-    fmap f (Produced o g) = Produced o (f . g)
+newtype Codensity f a =
+    Codensity { runCodensity :: forall r. (a -> f r) -> f r }
 
-type Producing o i = Coroutine (Interface i o)
-type Consuming r m i o = i -> Producing o i m r
+lowerCodensity :: Monad f => Codensity f a -> f a
+lowerCodensity (Codensity g) = g return
 
-yield :: forall i o m. (Monad m) => o -> Producing o i m i
-yield o =
-    let 
-        iof :: Interface i o (Coroutine (Interface i o) m i)
-        iof = Produced o f
-        f :: i -> Coroutine (Interface i o) m i
-        f i = Coroutine $ return $ Done i
-        in suspend iof
+liftCodensity :: Monad f => f a -> Codensity f a
+liftCodensity fa = Codensity (fa >>=)
 
-($$) :: Monad m => Producing a b m r -> Consuming r m a b -> m r
-producing $$ consuming = undefined
-        
+instance Functor (Codensity f) where
+    fmap g (Codensity h) = Codensity $ \k -> h (k . g)
 
+instance Applicative (Codensity f) where
+    pure a = Codensity $ \k -> k a
+    Codensity f <*> Codensity g = Codensity $ \h ->
+        f (\k -> g (h . k))
+
+instance Monad (Codensity f) where
+    return = pure
+    Codensity f >>= g = Codensity $ \h ->
+        f $ \a -> runCodensity (g a) h
+
+newtype CodensityEndo a =
+    CodensityEndo { getCodensityEndo :: Codensity Endo a }
+
+runCodensityEndo :: CodensityEndo a -> forall r. (a -> r -> r) -> r -> r
+runCodensityEndo =
+    (\f k r -> appEndo (f (Endo . k)) r) . runCodensity . getCodensityEndo
+
+-- now for the fun part
+
+instance Functor CodensityEndo where
+    fmap f (CodensityEndo (Codensity g)) = CodensityEndo $ Codensity $
+        \h -> g (h . f)
+
+instance Applicative CodensityEndo where
+    pure a = CodensityEndo $ Codensity $ \k -> k a
+    CodensityEndo (Codensity f) <*> CodensityEndo (Codensity g) =
+        CodensityEndo $ Codensity $ \h -> Endo $ \r ->
+            appEndo (f $ \k -> g (h . k)) r
+
+instance Monad CodensityEndo where
+    return = pure
+    CodensityEndo (Codensity f) >>= g = CodensityEndo $ Codensity $
+        \h -> Endo $ \r ->
+            appEndo (f $ \a -> Endo (runCodensityEndo (g a) (appEndo . h))) r
+
+joinCodensityEndo :: CodensityEndo (CodensityEndo a) -> CodensityEndo a
+joinCodensityEndo (CodensityEndo (Codensity f)) = CodensityEndo $ Codensity $
+    \g -> Endo $ \r -> appEndo (f (\(CodensityEndo (Codensity h)) -> h g)) r
+
+-- CodensityEndo ~~ List
+codensityEndoFromList :: [a] -> CodensityEndo a
+codensityEndoFromList as = CodensityEndo $ Codensity $ \f -> Endo $ \r ->
+    foldr (appEndo . f) r as
+
+codensityEndoToList :: CodensityEndo a -> [a]
+codensityEndoToList (CodensityEndo (Codensity f)) =
+    appEndo (f (\a -> Endo (a:))) []
