@@ -22,7 +22,8 @@ library
                        comonad,
                        vector,
                        distributive,
-                       text
+                       text,
+                       MonadRandom
   default-language:    Haskell2010
   ghc-options:         -Wall
                        -Wcompat
