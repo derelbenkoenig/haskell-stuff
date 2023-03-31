@@ -4,7 +4,7 @@ module CellularAutomata.CommandInterface where
 
 import CellularAutomata
 
-import Control.Exception
+import Control.Exception hiding (try)
 import Control.Monad.State.Strict
 
 import qualified Data.Text as T
@@ -23,9 +23,9 @@ data CommandState = CommandState Automaton Word8
 type CommandM a = StateT CommandState IO a
 type Parser = Parsec Void T.Text
 
-execCommands :: Handle -> CommandM ()
+execCommands :: Handle -> CommandM CommandState
 execCommands h  = do
-    joinIO $ handleJust (guard . isEOFError) (return . return) $ do
+    joinIO $ handleJust (guard . isEOFError) (return . const get) $ do
         line <- liftIO (T.hGetLine h)
         return $ do
             let parseResult = runParser parseCommand "" line
@@ -52,7 +52,7 @@ parseCommand = hspace *>
                 put $ CommandState newAutomaton ruleNo
                 liftIO $ T.putStrLn $ displayAutomaton newAutomaton
     <|> do
-        ruleNo <- symbol "rule" *> lexeme L.decimal <* eof
+        ruleNo <- symbol "rule" *> word8 <* eof
         return $ modify $ \(CommandState a _) -> CommandState a ruleNo
     <|> do
         _ <- symbol "randomize" <* eof
@@ -65,3 +65,5 @@ parseCommand = hspace *>
         return $ return ()
     )
 
+word8 :: Parser Word8
+word8 = try (char '0' *> char 'b' *> L.binary) <|> L.decimal
