@@ -16,14 +16,17 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     CellularAutomata
+  exposed-modules:     CellularAutomata,
+                       CellularAutomata.CommandInterface
   build-depends:       base >= 4.7 && < 5,
                        adjunctions,
                        comonad,
                        vector,
                        distributive,
                        text,
-                       MonadRandom
+                       MonadRandom,
+                       mtl,
+                       megaparsec
   default-language:    Haskell2010
   ghc-options:         -Wall
                        -Wcompat
