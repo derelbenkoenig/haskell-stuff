@@ -29,7 +29,10 @@ execCommands h  = do
         line <- T.hGetLine h
         return $ do
             let parseResult = runParser parseCommand "" line
-            either (liftIO . putStrLn . errorBundlePretty) id parseResult
+            either
+                (liftIO . putStrLn . errorBundlePretty)
+                execCommand
+                parseResult
             execCommands h
 
 joinIO :: MonadIO m => IO (m a) -> m a
@@ -41,28 +44,43 @@ lexeme = L.lexeme hspace
 symbol :: T.Text -> Parser T.Text
 symbol = L.symbol hspace
 
-parseCommand :: Parsec Void T.Text (CommandM ())
+data Command =
+    Run Int
+      | SetRule Word8
+      | Randomize
+      | PrintRule
+      | PrintCells
+      | Noop
+
+execCommand :: Command -> CommandM ()
+execCommand (Run steps) =
+    replicateM_ steps $ do
+        CommandState automaton ruleNo <- get
+        let newAutomaton = numRule ruleNo stepAutomaton automaton
+        put $ CommandState newAutomaton ruleNo
+        liftIO $ T.putStrLn $ displayAutomaton newAutomaton
+execCommand (SetRule ruleNo) =
+    modify $ \(CommandState a _) -> CommandState a ruleNo
+execCommand Randomize = do
+    newAutomaton <- randomCellsOn
+    modify $ \(CommandState _ n) -> CommandState newAutomaton n
+    liftIO $ T.putStrLn $ displayAutomaton newAutomaton
+execCommand PrintRule = do
+    CommandState _ ruleNo <- get
+    liftIO $ print ruleNo
+execCommand PrintCells = do
+    CommandState automaton _ <- get
+    liftIO $ T.putStrLn $ displayAutomaton automaton
+execCommand Noop = return ()
+
+parseCommand :: Parsec Void T.Text Command
 parseCommand = hspace *>
-    (do
-        steps <- symbol "run" *> lexeme L.decimal <* eof
-        return $ do
-            replicateM_ steps $ do
-                CommandState automaton ruleNo <- get
-                let newAutomaton = numRule ruleNo stepAutomaton automaton
-                put $ CommandState newAutomaton ruleNo
-                liftIO $ T.putStrLn $ displayAutomaton newAutomaton
-    <|> do
-        ruleNo <- symbol "rule" *> word8 <* eof
-        return $ modify $ \(CommandState a _) -> CommandState a ruleNo
-    <|> do
-        _ <- symbol "randomize" <* eof
-        return $ do
-            newAutomaton <- randomCellsOn
-            modify $ \(CommandState _ n) -> CommandState newAutomaton n
-            liftIO $ T.putStrLn $ displayAutomaton newAutomaton
-    <|> do
-        _ <- eof
-        return $ return ()
+    ( Run <$> (symbol "run" *> lexeme L.decimal <* eof)
+    <|> SetRule <$> (symbol "rule" *> word8 <* eof)
+    <|> Randomize <$ (symbol "randomize" <* eof)
+    <|> PrintRule <$ (symbol "printrule" <* eof)
+    <|> PrintRule <$ (symbol "printrule" <* eof)
+    <|> Noop <$ eof
     )
 
 word8 :: Parser Word8
