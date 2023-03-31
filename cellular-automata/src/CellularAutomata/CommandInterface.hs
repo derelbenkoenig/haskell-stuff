@@ -26,7 +26,7 @@ type Parser = Parsec Void T.Text
 execCommands :: Handle -> CommandM CommandState
 execCommands h  = do
     joinIO $ handleJust (guard . isEOFError) (return . const get) $ do
-        line <- liftIO (T.hGetLine h)
+        line <- T.hGetLine h
         return $ do
             let parseResult = runParser parseCommand "" line
             either (liftIO . putStrLn . errorBundlePretty) id parseResult
