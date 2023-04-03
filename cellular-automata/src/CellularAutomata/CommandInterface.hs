@@ -79,7 +79,7 @@ parseCommand = hspace *>
     <|> SetRule <$> (symbol "rule" *> word8 <* eof)
     <|> Randomize <$ (symbol "randomize" <* eof)
     <|> PrintRule <$ (symbol "printrule" <* eof)
-    <|> PrintRule <$ (symbol "printrule" <* eof)
+    <|> PrintCells <$ (symbol "printcells" <* eof)
     <|> Noop <$ eof
     )
 
