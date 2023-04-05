@@ -5,7 +5,7 @@
 {-# HLINT ignore "Use <=<" #-}
 {-# HLINT ignore "Use bimap" #-}
 module Lib where
-import Data.List (singleton)
+import Data.Maybe (mapMaybe)
 
 class Arrow arr where
     arr :: (a -> b) -> arr a b
@@ -16,6 +16,9 @@ class Arrow arr where
     f *** g = first f >>> second g
     first :: arr a b -> arr (a, c) (b, c)
     first f = f *** arr id
+
+w :: (a -> a -> b) -> a -> b
+w f a = f a a
 
 second :: Arrow arr => arr a b -> arr (c, a) (c, b)
 second f = arr swap >>> first f >>> arr swap
@@ -56,15 +59,14 @@ instance ArrowChoice (->) where
 φ :: (a -> b -> c) -> (e -> a) -> (e -> b) -> e -> c
 φ f g h x = f (g x) (h x)
 
-w :: (a -> a -> b) -> a -> b
-w f a = f a a
-
 mapA :: ArrowChoice arr => arr a b -> arr [a] [b]
 mapA f = arr listcase >>>
-         arr (const []) ||| (f *** mapA f >>> arr (uncurry (:))) where
-    listcase = \case
-        [] -> Left ()
-        x:xs -> Right (x, xs)
+         arr (const []) ||| (f *** mapA f >>> arr (uncurry (:)))
+
+listcase :: [a] -> Either () (a, [a])
+listcase = \case
+    [] -> Left ()
+    x:xs -> Right (x, xs)
 
 newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
 
@@ -91,12 +93,12 @@ instance Arrow SF where
 
 instance ArrowChoice SF where
     left (SF f) = SF $ \as ->
-        let fLefts = as >>= \eac -> either (f . singleton) (const []) eac
+        let fLefts = f $ mapMaybe (either Just (const Nothing)) as
             merge :: [b] -> [Either a c] -> [Either b c]
             merge _ [] = []
+            merge [] (_:_) = error "somehow more elements were Left than total"
             merge (x:xs) (Left _:ys) = Left x : merge xs ys
             merge xs (Right y:ys) = Right y : merge xs ys
-            merge [] (_:_) = error "somehow more elements were left than total"
          in merge fLefts as
 
 delay :: a -> SF a a
