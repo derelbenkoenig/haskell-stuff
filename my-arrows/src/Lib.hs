@@ -95,10 +95,12 @@ instance ArrowChoice SF where
     left (SF f) = SF $ \as ->
         let fLefts = f $ mapMaybe (either Just (const Nothing)) as
             merge :: [b] -> [Either a c] -> [Either b c]
-            merge _ [] = []
-            merge [] (_:_) = error "somehow more elements were Left than total"
             merge (x:xs) (Left _:ys) = Left x : merge xs ys
             merge xs (Right y:ys) = Right y : merge xs ys
+            merge [] (Left _:_) =
+                error "more lefts in input list than given to left function"
+            merge (_:_) [] = error "somehow more elements were Left than total"
+            merge [] [] = []
          in merge fLefts as
 
 delay :: a -> SF a a
