@@ -16,6 +16,7 @@ class Arrow arr where
     f *** g = first f >>> second g
     first :: arr a b -> arr (a, c) (b, c)
     first f = f *** arr id
+    {-# MINIMAL arr, (>>>), (first | (***)) #-}
 
 w :: (a -> a -> b) -> a -> b
 w f a = f a a
