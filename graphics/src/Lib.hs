@@ -13,11 +13,6 @@ import Control.Monad (unless)
 import TimeStep
 import GameState
 
-myLast :: [a] -> Maybe a
-myLast [] = Nothing
-myLast [x] = Just x
-myLast (_:xs) = myLast xs
-
 runGame :: (TimeValue t, TimeSteppable a) => GameState t a -> IO ()
 runGame initialGameState = do
     initializeAll
@@ -50,3 +45,4 @@ isQPress event =
             keyboardEventKeyMotion keyboardEvent == Pressed &&
                 keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
         _ -> False
+
