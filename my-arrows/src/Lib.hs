@@ -4,8 +4,10 @@
 {-# HLINT ignore "Use >=>" #-}
 {-# HLINT ignore "Use <=<" #-}
 {-# HLINT ignore "Use bimap" #-}
+{-# OPTIONS_GHC -Wno-incomplete-uni-patterns #-}
 module Lib where
 import Data.Maybe (mapMaybe)
+import Control.Monad.Fix
 
 class Arrow arr where
     arr :: (a -> b) -> arr a b
@@ -16,13 +18,12 @@ class Arrow arr where
     f *** g = first f >>> second g
     first :: arr a b -> arr (a, c) (b, c)
     first f = f *** arr id
+    second :: arr a b -> arr (c, a) (c, b)
+    second f = arr swap >>> first f >>> arr swap
     {-# MINIMAL arr, (>>>), (first | (***)) #-}
 
 w :: (a -> a -> b) -> a -> b
 w f a = f a a
-
-second :: Arrow arr => arr a b -> arr (c, a) (c, b)
-second f = arr swap >>> first f >>> arr swap
 
 swap :: (a, b) -> (b, a)
 swap (a, b) = (b, a)
@@ -33,12 +34,28 @@ class Arrow arr => ArrowChoice arr where
     (+++) :: arr a b -> arr a' b' -> arr (Either a a') (Either b b')
     f +++ g = left f >>> right g
     left :: arr a b -> arr (Either a c) (Either b c)
-
-right :: ArrowChoice arr => arr a b -> arr (Either c a) (Either c b)
-right f = arr mirror >>> left f >>> arr mirror
+    left f = f +++ arr id
+    right :: arr a b -> arr (Either c a) (Either c b)
+    right f = arr mirror >>> left f >>> arr mirror
+    {-# MINIMAL (left | (+++)) #-}
 
 mirror :: Either a b -> Either b a
 mirror = either Right Left
+
+mapA :: ArrowChoice arr => arr a b -> arr [a] [b]
+mapA f = arr listcase >>>
+         arr (const []) ||| (f *** mapA f >>> arr (uncurry (:)))
+
+listcase :: [a] -> Either () (a, [a])
+listcase = \case
+    [] -> Left ()
+    x:xs -> Right (x, xs)
+
+class Arrow arr => ArrowLoop arr where
+    loop :: arr (a, c) (b, c) -> arr a b
+
+class Arrow arr => ArrowApply arr where
+    app :: arr (arr a b, a) b
 
 infixl 1 >>>
 infixl 2 |||
@@ -60,14 +77,11 @@ instance ArrowChoice (->) where
 φ :: (a -> b -> c) -> (e -> a) -> (e -> b) -> e -> c
 φ f g h x = f (g x) (h x)
 
-mapA :: ArrowChoice arr => arr a b -> arr [a] [b]
-mapA f = arr listcase >>>
-         arr (const []) ||| (f *** mapA f >>> arr (uncurry (:)))
+instance ArrowLoop (->) where
+    loop f a = fst $ fix $ \(_, c) -> f (a, c)
 
-listcase :: [a] -> Either () (a, [a])
-listcase = \case
-    [] -> Left ()
-    x:xs -> Right (x, xs)
+instance ArrowApply (->) where
+    app (f, a) = f a
 
 newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
 
@@ -83,7 +97,16 @@ instance Monad m => ArrowChoice (Kleisli m) where
     Kleisli f +++ Kleisli g = Kleisli $ either (fmap Left . f) (fmap Right . g)
     left (Kleisli f) = Kleisli $ either (fmap Left . f) (return . Right)
 
+instance MonadFix m => ArrowLoop (Kleisli m) where
+    loop (Kleisli f) = Kleisli $ \a -> fmap fst (mfix $ \ ~(_, c) -> f (a, c))
+
+instance Monad m => ArrowApply (Kleisli m) where
+    app = Kleisli $ \ (Kleisli f, a) -> f a
+
 newtype SF a b = SF { runSF :: [a] -> [b] }
+
+delay :: a -> SF a a
+delay a = SF $ init . (a :)
 
 instance Arrow SF where
     arr = SF . fmap
@@ -104,6 +127,17 @@ instance ArrowChoice SF where
             merge [] [] = []
          in merge fLefts as
 
-delay :: a -> SF a a
-delay a = SF $ init . (a :)
+instance ArrowLoop SF where
+    loop (SF f) = SF $ \as ->
+        let (bs,cs) = unzip (f (zip as (stream cs))) in bs
+            where stream ~(x:xs) = x:stream xs
 
+nor :: SF (Bool, Bool) Bool
+nor = arr (not . uncurry (||))
+
+flipflop :: SF (Bool, Bool) (Bool, Bool)
+flipflop = loop $
+    arr (\ ((reset, set),~(c, d)) -> ((set,d),(reset,c))) >>>
+    nor *** nor >>>
+    delay (False, True) >>>
+    arr id &&& arr id
