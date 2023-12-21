@@ -5,6 +5,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -Wno-partial-type-signatures #-}
 
 module SkiFinal where
 

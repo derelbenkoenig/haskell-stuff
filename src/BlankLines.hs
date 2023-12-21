@@ -8,4 +8,7 @@ main :: IO ()
 main = do
     args <- getArgs
     let numLines = foldl' (+) 0 (fmap read args) :: Int
-    replicateM_ numLines (putStrLn "")
+    blanklines numLines
+
+blanklines :: Int -> IO ()
+blanklines n = replicateM_ n (putStrLn "")

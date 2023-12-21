@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTSyntax #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module FreeApplicative where
