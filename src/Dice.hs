@@ -10,6 +10,7 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module Dice where
 
@@ -30,6 +31,10 @@ $(singletons [d|
         MulRolls RollType RollType
     |])
 
+deriving instance Eq RollType
+
+$(singDecideInstance ''RollType)
+
 type family RollResult (t :: RollType) where
     RollResult Constant = Int
     RollResult Count = [Int]
@@ -45,7 +50,7 @@ data DiceRoll (t :: RollType) where
     -- e.g. roll 3d6 = RollCount 3 6
     RollCount :: Int -> Int -> DiceRoll Count
     RollKeepHighest :: Int -> DiceRoll Count -> DiceRoll KeepHighest
-    RollKeepLowest :: Int -> DiceRoll Count -> DiceRoll KeepHighest
+    RollKeepLowest :: Int -> DiceRoll Count -> DiceRoll KeepLowest
     RollPlus :: DiceRoll t1 -> DiceRoll t2 -> DiceRoll (AddRolls t1 t2)
     RollMinus :: DiceRoll t1 -> DiceRoll t2 -> DiceRoll (SubRolls t1 t2)
     RollMul :: DiceRoll t1 -> DiceRoll t2 -> DiceRoll (MulRolls t1 t2)
@@ -87,12 +92,14 @@ diceResult r = case r of
     RollMinus x y -> (,) <$> diceResult x <*> diceResult y
     RollMul x y -> (,) <$> diceResult x <*> diceResult y
 
-resultDisplayAndTotal :: forall m t. (MonadRandom m, SingI t) => DiceRoll t -> m (RollResult t, String, Int)
+resultDisplayAndTotal :: forall m t. (MonadRandom m, SingI t) =>
+                        DiceRoll t -> m (String, RollResult t, String, Int)
 resultDisplayAndTotal d = do
+    let notation = showDiceNotation d
     rolls <- diceResult d
     let total = withSing @t totalResult rolls
     let display = withSing @t showResult rolls
-    pure (rolls, display, total)
+    pure (notation, rolls, display, total)
 
 totalResult' :: forall m t. (MonadRandom m, SingI t) => DiceRoll t -> m Int
 totalResult' d = withSing @t totalResult <$> diceResult d
