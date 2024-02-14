@@ -26,14 +26,12 @@ $(singletons [d|
         Count |
         KeepHighest |
         KeepLowest |
-        AddRolls RollType RollType |
-        SubRolls RollType RollType |
-        MulRolls RollType RollType
+        AddRolls !RollType !RollType |
+        SubRolls !RollType !RollType |
+        MulRolls !RollType !RollType
     |])
 
 deriving instance Eq RollType
-
-$(singDecideInstance ''RollType)
 
 type family RollResult (t :: RollType) where
     RollResult Constant = Int

@@ -21,14 +21,12 @@ library
                        PrimeStuff,
                        SkiFinal,
                        FreeApplicative,
-                       Anagram,
                        Dice,
                        Dice.Parsing
   build-depends:       base >= 4.7 && < 5,
                        text,
                        bytestring,
                        vector,
-                       bytestring-trie,
                        MonadRandom,
                        singletons,
                        singletons-th,
@@ -49,6 +47,21 @@ executable blanklines
   hs-source-dirs:      src
   main-is:             BlankLines.hs
   build-depends:       base >= 4.7 && < 5
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-record-updates
+                       -Wincomplete-uni-patterns
+                       -Wmissing-home-modules
+                       -Wpartial-fields
+                       -Wredundant-constraints
+
+executable derpbob
+  hs-source-dirs:      src
+  main-is:             DerpBob.hs
+  build-depends:       base >= 4.7 && < 5,
+                       text
   default-language:    Haskell2010
   ghc-options:         -Wall
                        -Wcompat
