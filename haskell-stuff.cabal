@@ -22,7 +22,9 @@ library
                        SkiFinal,
                        FreeApplicative,
                        Dice,
-                       Dice.Parsing
+                       Dice.Parsing,
+                       MyCompose,
+                       ArgParser
   build-depends:       base >= 4.7 && < 5,
                        text,
                        bytestring,
@@ -61,7 +63,10 @@ executable derpbob
   hs-source-dirs:      src
   main-is:             DerpBob.hs
   build-depends:       base >= 4.7 && < 5,
-                       text
+                       text,
+                       MonadRandom,
+                       parser-combinators
+  other-modules:       ArgParser
   default-language:    Haskell2010
   ghc-options:         -Wall
                        -Wcompat
