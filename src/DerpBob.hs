@@ -3,7 +3,7 @@ module Main where
 import ArgParser
 import Control.Monad.Random
 import Data.Char
-import Data.Monoid (Endo(..))
+import Data.Monoid (Endo(..), Dual(..))
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
@@ -38,8 +38,7 @@ parseMode =
     <|> withProbability <$> (shortLongOpt 'p' "probability" autoReader)
 
 parseArgs :: ArgParser DerpBobMode
-parseArgs = (`appEndo` Alternating) <$> go where
-    go = mempty <$ endOfArgs <|> flip (<>) <$> parseMode <*> go
+parseArgs = (`appEndo` Alternating) . getDual <$> foldMapArgsUntil Dual endOfArgs parseMode
 
 defaultRandom :: DerpBobMode
 defaultRandom = Randomized 0.9

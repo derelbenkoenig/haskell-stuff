@@ -13,6 +13,8 @@ module ArgParser (
     longFlag,
     shortLongFlag,
     foldlArgsUntil,
+    foldArgsUntil,
+    foldMapArgsUntil,
 
     ArgReader(..),
     autoReader,
@@ -168,3 +170,18 @@ foldlArgsUntil :: Alternative f =>
     -> f b -- parsed folded result
 foldlArgsUntil combine stop next =
     stop <|> flip combine <$> next <*> foldlArgsUntil combine stop next
+
+foldArgsUntil :: (Alternative f, Monoid a) =>
+    f () -- detect end of args
+    -> f a -- parse one arg
+    -> f a -- folded up result
+foldArgsUntil stop next = 
+    mempty <$ stop <|> (<>) <$> next <*> foldArgsUntil stop next
+
+foldMapArgsUntil :: (Alternative f, Monoid m) =>
+    (a -> m) -- map to monoid
+    -> f () -- detect end of args
+    -> f a -- parse one arg
+    -> f m -- folded result
+foldMapArgsUntil g stop next =
+    mempty <$ stop <|> ((<>) . g) <$> next <*> foldMapArgsUntil g stop next
