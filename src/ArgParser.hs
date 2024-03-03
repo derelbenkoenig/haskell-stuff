@@ -12,6 +12,7 @@ module ArgParser (
     shortFlag,
     longFlag,
     shortLongFlag,
+    foldlArgsUntil,
 
     ArgReader(..),
     autoReader,
@@ -159,3 +160,11 @@ try p = ArgParser $ \args -> let
     in case res of
         Left e -> (args, Left e)
         Right a -> (args', Right a)
+
+foldlArgsUntil :: Alternative f =>
+    (b -> a -> b) -- folding function
+    -> f b -- parser that decides when to stop AND returns the zero value of the fold
+    -> f a -- parser to get the next value to fold in
+    -> f b -- parsed folded result
+foldlArgsUntil combine stop next =
+    stop <|> flip combine <$> next <*> foldlArgsUntil combine stop next
