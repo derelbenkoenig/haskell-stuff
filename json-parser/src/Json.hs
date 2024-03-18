@@ -17,6 +17,15 @@ data JsonValue =
     | JsonNumber Double
     deriving (Show, Eq)
 
+parseJson :: Parser JsonValue
+parseJson =
+    parseJsonNull
+    <|> parseJsonString
+    <|> parseJsonBool
+    <|> parseJsonNumber
+    <|> parseJsonArray
+    <|> parseJsonObject
+
 escapedChar :: Parser Char
 escapedChar = singleChar '\\' *> (singleChar '"' <|> singleChar '\\')
 
@@ -27,15 +36,6 @@ parseStringLiteral :: Parser String
 parseStringLiteral =
     between (singleChar '"') (singleChar '"') (many (escapedChar <|> satisfy (/= '"')))
 
-parseJson :: Parser JsonValue
-parseJson =
-    parseJsonNull
-    <|> parseJsonString
-    <|> parseJsonBool
-    <|> parseJsonNumber
-    <|> parseJsonArray
-    <|> parseJsonObject
-
 parseJsonNull :: Parser JsonValue
 parseJsonNull = JsonNull <$ matchStr "null"
 
@@ -44,7 +44,7 @@ parseJsonBool = JsonBool <$>
     (True <$ matchStr "true" <|> False <$ matchStr "false")
 
 parseDigits :: Parser String
-parseDigits = many (try $ satisfy isDigit)
+parseDigits = takeWhileP isDigit
 
 parseDot :: Parser Char
 parseDot = singleChar '.'
