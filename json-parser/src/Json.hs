@@ -49,15 +49,15 @@ parseDigits = takeWhileP isDigit
 parseDot :: Parser Char
 parseDot = singleChar '.'
 
-parseSignum :: Parser Int
+parseSignum :: Parser Integer
 parseSignum = 1 <$ singleChar '+' <|> (-1) <$ singleChar '-'
 
 parseE :: Parser Char
 parseE = singleChar 'e' <|> singleChar 'E'
 
-numFromDigits :: [Char] -> Int
+numFromDigits :: [Char] -> Integer
 numFromDigits = foldl'
-    (\num dig -> num * 10 + digitToInt dig)
+    (\num dig -> num * 10 + fromIntegral (digitToInt dig))
     0
 
 fracFromDigits :: [Char] -> Ratio Integer
