@@ -23,7 +23,6 @@ library
                        FreeApplicative,
                        Dice,
                        Dice.Parsing,
-                       MyCompose,
                        ArgParser
   build-depends:       base >= 4.7 && < 5,
                        text,

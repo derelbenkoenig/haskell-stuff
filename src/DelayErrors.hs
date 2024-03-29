@@ -35,6 +35,12 @@ instance Alternative m => Alternative (AccumErrorsT e m) where
          in liftA2 (,) (liftA2 (++) es es') a
     empty = AccumErrorsT $ fmap ([], ) empty
 
+instance (Applicative m, Semigroup a) => Semigroup (AccumErrorsT e m a) where
+    AccumErrorsT m1 <> AccumErrorsT m2 = AccumErrorsT $ liftA2 (\(es1, a1) (es2, a2) -> (es1 ++ es2, a1 <> a2)) m1 m2
+
+instance (Applicative m, Monoid a) => Monoid (AccumErrorsT e m a) where
+    mempty = AccumErrorsT $ pure ([], mempty)
+
 newtype Tardis forward backward m a =
     Tardis { runTardis :: forward -> backward -> m (forward, backward, a) }
 
