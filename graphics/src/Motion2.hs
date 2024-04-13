@@ -24,4 +24,5 @@ applyVelocity :: Fractional a =>
                  -> Velocity a -- ^ velocity
                  -> Position a -- ^ initial position
                  -> Position a -- ^ final position
-applyVelocity t (Velocity v) (Position p) = Position $ (+) <$> p <*> ((* t) <$> v)
+applyVelocity t (Velocity v) (Position p) =
+    Position $ (+) <$> p <*> ((* t) <$> v)
