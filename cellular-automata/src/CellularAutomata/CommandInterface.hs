@@ -5,6 +5,7 @@ module CellularAutomata.CommandInterface where
 import CellularAutomata
 
 import Control.Exception hiding (try)
+import Control.Monad (guard, join, replicateM_)
 import Control.Monad.State.Strict
 
 import qualified Data.Text as T
