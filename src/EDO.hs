@@ -22,13 +22,13 @@ centError :: (Integral edo, Floating r, RealFrac r) => edo -> r -> r
 centError edo ratio = roundN 2 ((approximation - exactSteps) / fromIntegral edo * 1200)
     where
     exactSteps = ratioToSteps edo ratio
-    approximation = fromInteger (round exactSteps)
+    approximation = fromIntegral (round exactSteps)
 
 majorRatios :: [Rational]
 majorRatios = [9/8, 5/4, 4/3, 3/2, 5/3, 15/8]
 
-majorScale :: (Integral edo, Floating a) => edo -> [a]
-majorScale edo = map (fromIntegral . nearestEdo edo) (fromRational <$> majorRatios)
+majorScale :: Integral edo => edo -> [edo]
+majorScale edo = map (nearestEdo edo) (fromRational <$> majorRatios)
 
 majorError :: (Integral edo, Floating r, RealFrac r) => edo -> [r]
 majorError edo = map (centError edo) (fromRational <$> majorRatios)
