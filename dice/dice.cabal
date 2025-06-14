@@ -25,6 +25,8 @@ source-repository head
 
 library
   exposed-modules:
+      Dice
+      Dice.Parsing
       Lib
   other-modules:
       Paths_dice
@@ -34,7 +36,14 @@ library
       src
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
-      base >=4.7 && <5
+      MonadRandom
+    , base >=4.7 && <5
+    , exinst
+    , megaparsec
+    , parser-combinators
+    , singletons
+    , singletons-th
+    , text
   default-language: Haskell2010
 
 executable dice-exe
@@ -47,8 +56,15 @@ executable dice-exe
       app
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      MonadRandom
+    , base >=4.7 && <5
     , dice
+    , exinst
+    , megaparsec
+    , parser-combinators
+    , singletons
+    , singletons-th
+    , text
   default-language: Haskell2010
 
 test-suite dice-test
@@ -62,6 +78,14 @@ test-suite dice-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+======
+      MonadRandom
+    , base >=4.7 && <5
     , dice
+    , exinst
+    , megaparsec
+    , parser-combinators
+    , singletons
+    , singletons-th
+    , text
   default-language: Haskell2010

@@ -26,7 +26,6 @@ library
                        text,
                        bytestring,
                        vector,
-                       MonadRandom,
                        singletons,
                        singletons-th,
                        exinst,
