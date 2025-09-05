@@ -1,10 +1,14 @@
 name:                categories
 version:             0.1.0.0
-github:              "derelbenkoenig/categories"
+github:              "derelbenkoenig/haskell-stuff/categories"
 license:             BSD-3-Clause
 author:              "Robert Benson"
 maintainer:          "derelbenkoenig@gmail.com"
 copyright:           "2025 Robert Benson"
+
+language: GHC2024
+default-extensions:
+  - NoStarIsType
 
 extra-source-files:
 - README.md
@@ -17,7 +21,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/derelbenkoenig/categories#readme>
+description:  'reading along with "Compiling to Categories" (Conal Elliot 2017)'
 
 dependencies:
 - base >= 4.7 && < 5
