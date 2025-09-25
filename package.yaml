@@ -33,7 +33,15 @@ ghc-options:
 
 language: GHC2024
 
+_ignore_exe_modules: &ignore_exe_modules
+  when:
+    - condition: false
+      other-modules:
+        - DerpBob
+        - BlankLines
+
 library:
+  <<: *ignore_exe_modules
   source-dirs: src
   dependencies:
     - base
@@ -49,16 +57,23 @@ library:
 
 executables:
   derpbob:
+    <<: *ignore_exe_modules
+    other-modules:
+      - ArgParser
     source-dirs: src
     main: DerpBob.hs
     dependencies:
       - base
+      - containers
       - text
       - MonadRandom
       - parser-combinators
 
   blanklines:
+    <<: *ignore_exe_modules
+    other-modules: []
     main: BlankLines.hs
+    source-dirs: src
     language: GHC2024
 
 tests:
