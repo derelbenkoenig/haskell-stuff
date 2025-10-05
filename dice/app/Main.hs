@@ -4,7 +4,7 @@ import Dice
 import Dice.Parsing
 import Data.Bifunctor
 import Exinst (Some1, withSome1)
-import Data.Text (pack)
+import Data.Text.IO qualified as Text
 
 import Text.Megaparsec (parse, errorBundlePretty)
 
@@ -24,4 +24,4 @@ main = do
     main
 
 readDiceRoll :: IO (Either String (Some1 DiceRoll))
-readDiceRoll = first errorBundlePretty . parse diceRoll "" . pack <$> getLine
+readDiceRoll = first errorBundlePretty . parse diceRoll "" <$> Text.getLine
