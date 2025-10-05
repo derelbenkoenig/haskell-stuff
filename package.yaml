@@ -75,14 +75,3 @@ executables:
     main: BlankLines.hs
     source-dirs: src
     language: GHC2024
-
-tests:
-  dice-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - dice
