@@ -26,7 +26,6 @@ ghc-options:
 - -Widentities
 - -Wincomplete-record-updates
 - -Wincomplete-uni-patterns
-- -Wmissing-export-lists
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
@@ -39,6 +38,7 @@ _ignore_exe_modules: &ignore_exe_modules
       other-modules:
         - DerpBob
         - BlankLines
+        - Rot13
 
 library:
   <<: *ignore_exe_modules
@@ -75,3 +75,13 @@ executables:
     main: BlankLines.hs
     source-dirs: src
     language: GHC2024
+
+  rot13:
+    <<: *ignore_exe_modules
+    other-modules: []
+    main: Rot13.hs
+    source-dirs: src
+    language: GHC2024
+    dependencies:
+      - conduit
+      - bytestring
