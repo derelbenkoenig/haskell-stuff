@@ -19,6 +19,7 @@ dependencies:
 - parser-combinators
 - exinst
 - text
+- extra
 
 ghc-options:
 - -Wall
@@ -54,6 +55,7 @@ library:
     - exinst
     - megaparsec
     - parser-combinators
+    - constraints
 
 executables:
   derpbob:

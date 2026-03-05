@@ -37,7 +37,7 @@ pfactors x
         factorItem p n = p :^ countFactor p n
         countFactor p n = let (d,m) = n `divMod` p
                            in if m /= 0 then 0 else 1 + countFactor p d
-        potentialPrimeFactors = takeWhile ((<= x) . (^ (2 :: Integer))) primes
+        potentialPrimeFactors = takeWhile (<= x) primes
         removeEmpties = filter ((/= 0) . powExp)
         in removeEmpties $ map (`factorItem` x) potentialPrimeFactors
 
